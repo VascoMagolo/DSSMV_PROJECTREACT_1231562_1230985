@@ -6,10 +6,11 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -19,6 +20,20 @@ export default function TabLayout() {
         tabBarStyle: {
           paddingBottom: 5,
           height: 60,
+          backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background,
+          borderTopColor: colorScheme === 'dark' ? Colors.dark.border : Colors.light.border,
+          borderTopWidth: 1,
+          left : 8,
+          right: 8,
+          paddingTop: 3,
+          bottom: insets.bottom + 8,
+          position: 'absolute',
+          borderRadius: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 5,
         }
       }}>
       
@@ -51,7 +66,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <MaterialIcons name="chat" size={28} color={color} />,
         }}
       />
-      if (!isGuest) {
         <Tabs.Screen
         name="account"
         options={{
@@ -59,7 +73,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <MaterialIcons name="account-circle" size={28} color={color} />,
         }}
       />
-      }
       <Tabs.Screen name="index" options={{ href: null }} />
     </Tabs>
   );

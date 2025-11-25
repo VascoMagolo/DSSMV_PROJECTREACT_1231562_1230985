@@ -5,7 +5,7 @@ export type CustomUser = {
   id: string;
   email: string;
   username?: string;
-  preferredLanguage?: string;
+  preferred_language?: string;
 };
 
 type AuthContextType = {
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(JSON.parse(storedUser));
         }
       } catch (error) {
-        console.log('Erro ao carregar sessão:', error);
+        console.log('Error loading session:', error);
       } finally {
         setIsLoading(false);
       }
@@ -50,20 +50,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error || !userData) {
         setIsLoading(false);
-        return { error: 'Utilizador não encontrado.' };
+        return { error: 'User not found.' };
       }
       if (userData.password !== passwordInput) {
         setIsLoading(false);
-        return { error: 'Password incorreta.' };
+        return { error: 'Incorrect password.' };
       }
 
       const userToSave = {
           id: userData.id,
           email: userData.email,
-          username: userData.username ,
-          preferredLanguage: userData.preferredLanguage
+          username: userData.name ,
+          preferred_language: userData.preferred_language
       };
-
       setUser(userToSave);
       await AsyncStorage.setItem('@app_user', JSON.stringify(userToSave));
       setIsGuest(false);
@@ -71,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error: null };
 
     } catch (err) {
-      return { error: 'Erro inesperado no login.' };
+      return { error: 'Unexpected error during login.' };
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setIsGuest(false);
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+      console.error('Error during logout:', error);
     }
   };
 
