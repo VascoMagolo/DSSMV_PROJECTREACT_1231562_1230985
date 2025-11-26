@@ -1,4 +1,4 @@
-import { detectLanguage, useTranslation } from '@/src/api/translationAPI';
+import { translationAPI } from '@/src/api/translationAPI';
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
@@ -16,25 +16,24 @@ type Data = {
   translation: string;
 }
 
-type DataLang = {
-  message: string;
-  lang: string;
-  confidence: number;
-}
-
 export default function TranslationScreen() {
   const theme = useTheme();
   const [data, setData] = useState<Data | null>(null);
-  const [dataLang, setDataLang] = useState<DataLang | null>(null);
+  const [translatedText, setTranslatedText] = useState('');
   const [language, setLanguage] = useState<string>('pt');
-  let text = 'Bom dia!';// for testing purposes
+  const [isLoading, setIsLoading] = useState(false);
+  let text = 'Bom dia, como voce esta neste belo dia meu caro senhor!';// for testing purposes
   const handleTranslationClick = async () => {
-    const resultLang = await detectLanguage(text);
-    setDataLang(resultLang);
-    console.log(resultLang);
-    const result = await useTranslation(resultLang.lang, language, text);
-    setData(result);
-    console.log(result);
+    setIsLoading(true);
+    try {
+      const result = await translationAPI.detectAndTranslate(language, text);
+      setTranslatedText(result.translatedText);
+      console.log(result);
+    } catch (error) {
+      console.error('Error during translation:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -59,7 +58,17 @@ export default function TranslationScreen() {
       <Button mode="contained" onPress={handleTranslationClick}>
         Press me
       </Button>
-      {data && <Text>{data.translation}</Text>}
+
+          <View style={[styles.card, { backgroundColor: theme.colors.primaryContainer }]}>
+            <Text style={[styles.label, { color: theme.colors.onPrimaryContainer }]}>Translation</Text>
+            <Text style={[styles.resultText, { color: theme.colors.onPrimaryContainer }]}>
+              {translatedText}
+            </Text>
+            <View style={styles.actionRow}>
+              <IconButton icon="content-copy" size={20} onPress={() => {}} />
+              <IconButton icon="volume-high" size={20} onPress={() => {}} />
+            </View>
+          </View>
     </View>
   );
 }
@@ -82,5 +91,32 @@ const styles = StyleSheet.create({
   selectedTextStyle: {
     fontSize: 14,
     color: '#333333',
+  },
+
+  card: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  label: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    color: '#666',
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  resultText: {
+    fontSize: 20,
+    fontWeight: '500',
+    marginBottom: 10,
   },
 });
