@@ -4,6 +4,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { IconButton, useTheme } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { languagesData } from '@/constants/values';
+import { styles as stylesA } from '@/constants/styles';
 
 const TranslationCard = ({
   language,
@@ -23,9 +24,9 @@ const TranslationCard = ({
 
       <View style={styles.headerRow}>
         <Dropdown
-          style={styles.dropdown}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
+          style={stylesA.dropdown}
+          placeholderStyle={stylesA.placeholderStyle}
+          selectedTextStyle={stylesA.selectedTextStyle}
           data={languagesData}
           maxHeight={300}
           labelField="label"
@@ -177,25 +178,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 6,
-  },
-  dropdown: {
-    height: 40,
-    width: 150,
-    borderColor: '#E0E0E0',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    backgroundColor: '#FAFAFA',
-  },
-  placeholderStyle: {
-    fontSize: 14,
-    color: '#999',
-  },
-  selectedTextStyle: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
   swapContainer: {
     height: 50,

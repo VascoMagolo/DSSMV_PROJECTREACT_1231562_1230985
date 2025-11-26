@@ -6,6 +6,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { Ionicons } from '@expo/vector-icons';
 import { IconButton, useTheme } from 'react-native-paper';
 import { languagesData } from '@/constants/values';
+import { styles as stylesA } from '@/constants/styles';
 
 type Data = {
   TT: number;
@@ -41,9 +42,9 @@ export default function TranslationScreen() {
       <Text>Voice Translation Screen</Text>
       <Text>Test</Text>
       <Dropdown
-          style={styles.dropdown}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
+          style={stylesA.dropdown}
+          placeholderStyle={stylesA.placeholderStyle}
+          selectedTextStyle={stylesA.selectedTextStyle}
           data={languagesData}
           maxHeight={300}
           labelField="label"
@@ -75,24 +76,6 @@ export default function TranslationScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  dropdown: {
-    height: 40,
-    width: 150,
-    borderColor: '#E0E0E0',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    backgroundColor: '#FAFAFA',
-  },
-  placeholderStyle: {
-    fontSize: 14,
-    color: '#999999',
-  },
-  selectedTextStyle: {
-    fontSize: 14,
-    color: '#333333',
-  },
-
   card: {
     borderRadius: 16,
     padding: 20,

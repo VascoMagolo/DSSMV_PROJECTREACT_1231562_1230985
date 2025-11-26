@@ -3,6 +3,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Button, useTheme } from 'react-native-paper';
 import { ocrAPI } from '@/src/api/ocrAPI';
+import Ionicons from '@expo/vector-icons/build/Ionicons';
+import { Dropdown } from 'react-native-element-dropdown';
+import { languagesData } from '@/constants/values';
+import { styles as stylesA } from '@/constants/styles';
+import { translationAPI } from '@/src/api/translationAPI';
 
 export default function ImageScreen() {
   const theme = useTheme();
@@ -10,7 +15,8 @@ export default function ImageScreen() {
   const [extractedText, setExtractedText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [image, setImage] = useState<string | null>(null);
-
+  const [language, setLanguage] = useState<string>('pt');
+  const [translatedText, setTranslatedText] = useState<string>('');
   const handleImagePicked = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     if (permissionResult.granted === false) {
@@ -27,16 +33,16 @@ export default function ImageScreen() {
       setLoading(true);
       setImage(result.assets[0].uri);
       setExtractedText('Processing...');
+      setTranslatedText('Translating...');
 
       try {
         const text = await ocrAPI.useOCR(result.assets[0].uri);
-       if (typeof text === 'object') {
-            setExtractedText(JSON.stringify(text));
-        } else {
-            setExtractedText(text);
-        }
+        const translationResult = await translationAPI.detectAndTranslate(language, JSON.stringify(text));
+        setExtractedText(text);
+        setTranslatedText(translationResult.translatedText);
       } catch (e) {
         setExtractedText("Error reading text.");
+        setTranslatedText("Error translating text.");
       } finally {
         setLoading(false);
       }
@@ -49,7 +55,21 @@ export default function ImageScreen() {
       {image && (
         <Image source={{ uri: image }} style={styles.previewImage} />
       )}
-
+      <Dropdown
+          style={stylesA.dropdown}
+          placeholderStyle={stylesA.placeholderStyle}
+          selectedTextStyle={stylesA.selectedTextStyle}
+          data={languagesData}
+          maxHeight={300}
+          labelField="label"
+          valueField="value"
+          placeholder="Select Language"
+          value={language}
+          onChange={item => setLanguage(item.value)}
+          renderRightIcon={() => (
+            <Ionicons name="chevron-down" size={20} color={theme.colors.onSurface} />
+          )}
+        />
       <Button 
         mode="contained" 
         onPress={handleImagePicked}
@@ -63,6 +83,10 @@ export default function ImageScreen() {
         <View style={[styles.resultCard, { backgroundColor: theme.colors.surfaceVariant }]}>
           <Text style={{fontWeight: 'bold', marginBottom: 5, color: theme.colors.onSurface}}>Detected Text:</Text>
           <Text style={{fontSize: 16, color: theme.colors.onSurface}}>{extractedText}</Text>
+        </View>
+        <View style={[styles.resultCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+          <Text style={{fontWeight: 'bold', marginBottom: 5, color: theme.colors.onSurface}}>Translated Text:</Text>
+          <Text style={{fontSize: 16, color: theme.colors.onSurface}}>{translatedText}</Text>
         </View>
 
     </ScrollView>
