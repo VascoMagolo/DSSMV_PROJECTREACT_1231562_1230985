@@ -27,6 +27,7 @@ export const Colors = {
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
     border: '#E0E0E0',
+    speakButtonBackground: '#006C69',
   },
   dark: {
     text: '#ECEDEE',
@@ -36,6 +37,7 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
     border: '#303030',
+    speakButtonBackground: '#006C69',
   },
 };
 

@@ -16,6 +16,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { supabase } from '../../src/services/supabase';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useTheme } from 'react-native-paper';
+import { languagesData } from '@/constants/values';
 
 export default function AuthScreen() {
   
@@ -178,18 +179,7 @@ export default function AuthScreen() {
                     placeholderStyle={{ color: '#999', fontSize: 16 }}
                     selectedTextStyle={{ color: '#333', fontSize: 16 }}
                     containerStyle={{ borderRadius: 12, marginTop: 5 }}
-                    data={[
-                      { label: 'English', value: 'en' },
-                      { label: 'Português', value: 'pt' },
-                      { label: 'Español', value: 'es' },
-                      { label: 'Français', value: 'fr' },
-                      { label: 'Deutsch', value: 'de' },
-                      { label: 'Italiano', value: 'it' },
-                      { label: '中文', value: 'zh' },
-                      { label: '日本語', value: 'ja' },
-                      { label: '한국어', value: 'ko' },
-                      { label: 'Русский', value: 'ru' },
-                    ]}
+                    data={languagesData}
                     labelField="label"
                     valueField="value"
                     placeholder="Select Language"

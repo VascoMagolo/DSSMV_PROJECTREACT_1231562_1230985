@@ -82,9 +82,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
+      console.log('Signing out...');
       await AsyncStorage.removeItem('@app_user');
       setUser(null);
       setIsGuest(false);
+      console.log('Signed out successfully.');
     } catch (error) {
       console.error('Error during logout:', error);
     }
