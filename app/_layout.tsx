@@ -1,9 +1,10 @@
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { AuthProvider, useAuth } from '../src/context/UserContext';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { AppColors } from '../constants/theme';
+import { ModalPortal } from 'react-native-modals';
 
 const theme = {
   ...MD3LightTheme,
@@ -19,6 +20,7 @@ const InitialLayout = () => {
   const { user, isLoading, isGuest } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  
 
   useEffect(() => {
     if (isLoading) return;
@@ -49,7 +51,9 @@ export default function RootLayout() {
     <PaperProvider theme={theme}>
       <AuthProvider>
         <InitialLayout />
+         <ModalPortal />
       </AuthProvider>
     </PaperProvider>
+    
   );
 }

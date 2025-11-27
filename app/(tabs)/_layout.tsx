@@ -7,10 +7,12 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/src/context/UserContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { isGuest } = useAuth();
   return (
     <Tabs
       screenOptions={{
@@ -66,12 +68,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <MaterialIcons name="chat" size={28} color={color} />,
         }}
       />
-        <Tabs.Screen
+
+      <Tabs.Screen
         name="account"
         options={{
           title: 'Account',
           tabBarIcon: ({ color }) => <MaterialIcons name="account-circle" size={28} color={color} />,
+          href: isGuest ? null : undefined
         }}
+        
       />
       <Tabs.Screen name="index" options={{ href: null }} />
     </Tabs>

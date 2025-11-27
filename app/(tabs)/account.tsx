@@ -1,29 +1,71 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Avatar, Text, Button, List, Divider, useTheme, Switch } from 'react-native-paper';
-import { useAuth } from '../../src/context/AuthContext';
+import { 
+  Avatar, 
+  Text, 
+  Button, 
+  List, 
+  Divider, 
+  useTheme, 
+  Portal, 
+  Modal, 
+  TextInput 
+} from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/src/context/UserContext';
+import { Dropdown } from 'react-native-element-dropdown';
+import { styles as stylesA } from '@/constants/styles';
+import { languagesData } from '@/constants/values';
+import Ionicons from '@expo/vector-icons/build/Ionicons';
 
 export default function AccountScreen() {
-  const { user, signOut, isGuest } = useAuth();
+  const { user, signOut, isGuest, updateUserProfile } = useAuth();
   const theme = useTheme();
-  const router = useRouter();
+  const router = useRouter(); 
+  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [newLanguage, setNewLanguage] = useState<string>(user?.preferred_language || 'en');
+
+  useEffect(() => {
+    if (modalVisible && user?.username) {
+      setNewName(user.username);
+    }
+  }, [modalVisible, user]);
 
   const handleLogout = () => {
     Alert.alert(
-      "Log Out",
+      "Logout",
       "Are you sure you want to log out?",
       [
         { text: "Cancel", style: "cancel" },
         { 
           text: "Log Out", 
           style: "destructive", 
-          onPress: async () => {
-            await signOut();
+          onPress: () => {
+             signOut();
           } 
         }
       ]
     );
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!newName.trim()) {
+      alert("Username cannot be empty");
+      return;
+    }
+
+    setLoading(true);
+    const result = await updateUserProfile({ username: newName, preferred_language: newLanguage });
+    setLoading(false);
+
+    if (result.error) {
+      alert("Error updating: " + result.error);
+    } else {
+      setModalVisible(false);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -49,6 +91,7 @@ export default function AccountScreen() {
           {isGuest ? "Guest Mode" : user?.email}
         </Text>
       </View>
+
       <View style={styles.section}>
         <List.Section>
           <List.Subheader>Account</List.Subheader>
@@ -57,41 +100,107 @@ export default function AccountScreen() {
             title="Edit Profile"
             left={props => <List.Icon {...props} icon="account-edit-outline" />}
             right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => setModalVisible(true)}
+            disabled={isGuest}
+          />
+
+          <Divider />
+          
+          <List.Item
+            title="Native Language"
+            description={user?.preferred_language ? user.preferred_language.toUpperCase() : "ENGLISH"}
+            left={props => <List.Icon {...props} icon="translate" />}
+            disabled={isGuest}
+          />
+        </List.Section>
+      </View>
+      <Portal>
+        <Modal 
+          visible={modalVisible} 
+          onDismiss={() => setModalVisible(false)} 
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Text variant="headlineSmall" style={{marginBottom: 20, textAlign: 'center'}}>
+            Edit Profile
+          </Text>
+          
+          <TextInput
+            label="Username"
+            value={newName}
+            onChangeText={setNewName}
+            mode="outlined"
+            style={{ marginBottom: 20 }}
+          />
+          <Dropdown
+            style={[stylesA.dropdown]} 
+            placeholderStyle={stylesA.placeholderStyle}
+            selectedTextStyle={stylesA.selectedTextStyle}
+            data={languagesData}
+            maxHeight={300}
+            labelField="label"
+            valueField="value"
+            placeholder="To"
+            value={newLanguage}
+            onChange={item => setNewLanguage(item.value)}
+            renderRightIcon={() => (
+              <Ionicons name="chevron-down" size={20} color={theme.colors.onSurface} />
+            )}
+          />
+          <View style={styles.modalButtons}>
+            <Button 
+              mode="text" 
+              onPress={() => setModalVisible(false)} 
+              style={{ marginRight: 10 }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              mode="contained" 
+              onPress={handleUpdateProfile}
+              loading={loading}
+              disabled={loading}
+            >
+              Save
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
+
+      <View style={styles.section}>
+        <List.Section>
+          <List.Subheader>History</List.Subheader>
+           <List.Item
+            title="Image Translation History"
+            left={props => <List.Icon {...props} icon="image" />}
             onPress={() => alert('Future functionality')}
             disabled={isGuest}
           />
           <Divider />
           <List.Item
-            title="Native Language"
-            description={user?.preferred_language ? user.preferred_language.toUpperCase() : "English"}
-            left={props => <List.Icon {...props} icon="translate" />}
-            onPress={() => alert('Here you would open a modal to change the language in the DB')}
+            title="Conversation History"
+            left={props => <List.Icon {...props} icon="account-voice" />}
+            onPress={() => alert('Future functionality')}
+            disabled={isGuest}
+          />
+          <Divider />
+          <List.Item
+            title="Voice History"
+            left={props => <List.Icon {...props} icon="microphone" />}
+            onPress={() => alert('Future functionality')}
             disabled={isGuest}
           />
         </List.Section>
       </View>
 
-      <View style={styles.section}>
-        <List.Section>
-          <List.Subheader>App</List.Subheader>
-          <List.Item
-            title="About RTTC"
-            left={props => <List.Icon {...props} icon="information-outline" />}
-            onPress={() => alert('Version 1.0.0')}
-          />
-        </List.Section>
-      </View>
       <View style={styles.logoutContainer}>
         <Button 
           mode="outlined" 
-          onPress={() => {
-            signOut();
-          }}
+          onPress={handleLogout}
           textColor={theme.colors.error}
           style={{ borderColor: theme.colors.error }}
           icon="logout"
         >
-          Log Out
+          Logout
         </Button>
       </View>
 
@@ -136,5 +245,16 @@ const styles = StyleSheet.create({
   logoutContainer: {
     paddingHorizontal: 20,
     marginTop: 10,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    margin: 20,
+    borderRadius: 15,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10
   }
 });

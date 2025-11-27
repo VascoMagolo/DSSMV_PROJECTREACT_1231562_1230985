@@ -8,21 +8,22 @@ export type CustomUser = {
   preferred_language?: string;
 };
 
-type AuthContextType = {
+type UserContextType = {
   user: CustomUser | null;
   isLoading: boolean;
   isGuest: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInAsGuest: () => void;
   signOut: () => void;
+  updateUserProfile: (updates: Partial<CustomUser>) => Promise<{ error: string | null }>;
 };
-
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const UserContext = createContext<UserContextType>({} as UserContextType);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<CustomUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  
   useEffect(() => {
     const loadUserFromStorage = async () => {
       try {
@@ -58,15 +59,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const userToSave = {
-          id: userData.id,
-          email: userData.email,
-          username: userData.name ,
-          preferred_language: userData.preferred_language
+        id: userData.id,
+        email: userData.email,
+        username: userData.name,
+        preferred_language: userData.preferred_language
       };
       setUser(userToSave);
       await AsyncStorage.setItem('@app_user', JSON.stringify(userToSave));
       setIsGuest(false);
-      
+
       return { error: null };
 
     } catch (err) {
@@ -92,11 +93,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updateUserProfile = async (updates: Partial<CustomUser>) => {
+    if (!user || isGuest) return { error: "Action not allowed for guest or logged out users." };
+
+    try {
+      const updatesForDb: any = {};
+      
+      if (updates.username !== undefined) {
+        updatesForDb.name = updates.username; 
+      }
+      if (updates.preferred_language !== undefined) {
+        updatesForDb.preferred_language = updates.preferred_language;
+      }
+      const { error } = await supabase
+        .from('users')
+        .update(updatesForDb)
+        .eq('id', user.id);
+
+      if (error) {
+        console.error("Supabase update error:", error);
+        throw new Error(error.message);
+      }
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      await AsyncStorage.setItem('@app_user', JSON.stringify(updatedUser));
+
+      return { error: null };
+
+    } catch (err: any) {
+      return { error: err.message || 'Error updating profile.' };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isGuest, signIn, signInAsGuest, signOut }}>
+    <UserContext.Provider value={{ user, isLoading, isGuest, signIn, signInAsGuest, signOut, updateUserProfile }}>
       {children}
-    </AuthContext.Provider>
+    </UserContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(UserContext);

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../src/context/AuthContext';
+import { useAuth } from '../../src/context/UserContext';
 import { supabase } from '../../src/services/supabase';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useTheme } from 'react-native-paper';
