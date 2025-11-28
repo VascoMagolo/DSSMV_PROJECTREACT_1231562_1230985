@@ -41,3 +41,20 @@ app-example
 # generated native folders
 /ios
 /android
+
+.env
+
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs do sistema e npm
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.keystore
+google-services.json
+GoogleService-Info.plist
+credentials.json
