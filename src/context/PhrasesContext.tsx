@@ -14,7 +14,8 @@ type PhrasesContextType = {
   genericPhrases: Phrase[];
   isLoading: boolean;
   fetchPhrases: (language: string) => Promise<void>;
-  addPhrase: (text: string, language: string, category?: string) => Promise<void>;
+  //addPhrase: (text: string, language: string, category?: string) => Promise<void>;
+  addPhrase(adds: Partial<Phrase>) : Promise <{error: string | null}>;
   deletePhrase: (id: string) => Promise<void>;
 };
 
@@ -55,25 +56,25 @@ export const PhrasesProvider = ({ children }: { children: React.ReactNode }) => 
       setIsLoading(false);
     }
   }, [user]);
-  const addPhrase = async (text: string, language: string, category: string = 'Personal') => {
+  // text: string, language: string, category: string = 'Personal'
+  const addPhrase = async (adds: Partial<Phrase>) => {
     if (!user) return;
     try {
       const { error } = await supabase.from('user_phrases').insert({
         user_id: user.id,
-        text: text,
-        language: language,
-        category: category,
+        text: adds.text,
+        language: adds.language,
+        category: adds.category,
       });
 
       if (error) throw error;
-    
-      await fetchPhrases(language);
+      //await fetchPhrases(adds.language);
       
     } catch (err) {
       console.error("Error adding phrase:", err);
       throw err;
     }
-  };
+  };//error
 
   const deletePhrase = async (id: string) => {
     try {
