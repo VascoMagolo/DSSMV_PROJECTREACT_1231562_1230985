@@ -1,21 +1,22 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { supabase } from '../services/supabase';
-import { useAuth } from './UserContext'; 
+import { useAuth } from './UserContext';
+import { translationAPI } from '../api/translationAPI';
 export type Phrase = {
   id: string;
-  text: string;     
+  text: string;
   category: string;
   language: string;
   user_id?: string;
-  translation?: string; };
+  translation?: string;
+};
 
 type PhrasesContextType = {
   userPhrases: Phrase[];
   genericPhrases: Phrase[];
   isLoading: boolean;
   fetchPhrases: (language: string) => Promise<void>;
-  //addPhrase: (text: string, language: string, category?: string) => Promise<void>;
-  addPhrase(adds: Partial<Phrase>) : Promise <{error: string | null}>;
+  addPhrase(adds: Partial<Phrase>): Promise<{ error: string | null; detectedLanguage?: string }>;
   deletePhrase: (id: string) => Promise<void>;
 };
 
@@ -34,7 +35,7 @@ export const PhrasesProvider = ({ children }: { children: React.ReactNode }) => 
         .from('generic_phrases')
         .select('*')
         .eq('language', language);
-      
+
       setGenericPhrases(genericData || []);
 
       if (user) {
@@ -56,25 +57,30 @@ export const PhrasesProvider = ({ children }: { children: React.ReactNode }) => 
       setIsLoading(false);
     }
   }, [user]);
-  // text: string, language: string, category: string = 'Personal'
-  const addPhrase = async (adds: Partial<Phrase>) => {
-    if (!user) return;
+
+  const addPhrase = async (adds: Partial<Phrase>): Promise<{ error: string | null; detectedLanguage?: string }> => {
+    if (!user) return { error: 'Not authenticated' };
+    if (!adds.text) return { error: 'Text is required' };
     try {
+      const detectedLang = await translationAPI.detectLanguage(adds.text);
+      console.log("Detected language:", detectedLang);
       const { error } = await supabase.from('user_phrases').insert({
         user_id: user.id,
         text: adds.text,
-        language: adds.language,
-        category: adds.category,
+        language: detectedLang,
+        category: adds.category || 'Personal',
       });
-
-      if (error) throw error;
-      //await fetchPhrases(adds.language);
-      
-    } catch (err) {
+      if (error) {
+        console.error("Error adding phrase:", error);
+        throw error;
+      }
+      await fetchPhrases(detectedLang);
+      return { error: null, detectedLanguage: detectedLang };
+    } catch (err: any) {
       console.error("Error adding phrase:", err);
-      throw err;
+      return { error: err.message || String(err) };
     }
-  };//error
+  };
 
   const deletePhrase = async (id: string) => {
     try {
@@ -87,13 +93,13 @@ export const PhrasesProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   return (
-    <PhrasesContext.Provider value={{ 
-      userPhrases, 
-      genericPhrases, 
-      isLoading, 
-      fetchPhrases, 
-      addPhrase, 
-      deletePhrase 
+    <PhrasesContext.Provider value={{
+      userPhrases,
+      genericPhrases,
+      isLoading,
+      fetchPhrases,
+      addPhrase,
+      deletePhrase
     }}>
       {children}
     </PhrasesContext.Provider>

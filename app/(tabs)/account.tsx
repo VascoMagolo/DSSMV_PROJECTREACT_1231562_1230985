@@ -2,7 +2,7 @@ import { styles as stylesA } from "@/constants/styles";
 import { languagesData } from "@/constants/values";
 import { useAuth } from "@/src/context/UserContext";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
@@ -197,7 +197,7 @@ export default function AccountScreen() {
           <List.Item
             title="Conversation History"
             left={(props) => <List.Icon {...props} icon="account-voice" />}
-            onPress={() => alert("Future functionality")}
+            onPress={() => router.push('/translationHistory')}
             disabled={isGuest}
           />
           <Divider />

@@ -47,7 +47,7 @@ export const translationAPI = {
         }
     },
 
-    detectAndTranslate : async (to: string, text: string) => {
+    detectAndTranslate: async (to: string, text: string) => {
         const detectLang = await translationAPI.detectLanguage(text);
         const translateText = await translationAPI.useTranslation(detectLang, to, text);
         return {

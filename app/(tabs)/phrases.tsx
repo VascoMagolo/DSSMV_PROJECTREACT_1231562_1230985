@@ -24,20 +24,24 @@ import {
   Phrase,
   PhrasesProvider,
   usePhrases,
-} from "../../src/context/PhrasesContext";
+} from "@/src/context/PhrasesContext";
+import { translationAPI } from "@/src/api/translationAPI";
 
 const PhraseItem = ({
   item,
   onDelete,
+  onPress,
   isUserPhrase,
 }: {
   item: Phrase;
   onDelete?: (id: string) => void;
+  onPress?: (phrase: Phrase) => void;
   isUserPhrase: boolean;
 }) => {
   const theme = useTheme();
   return (
-    <View
+    <TouchableOpacity
+      onPress={() => onPress && onPress(item)}
       style={[
         styles.itemContainer,
         { backgroundColor: theme.colors.surfaceVariant },
@@ -60,7 +64,7 @@ const PhraseItem = ({
           <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -74,14 +78,17 @@ const PhrasesContent = () => {
     isLoading,
     addPhrase,
   } = usePhrases();
-  const [modalVisible, setModalVisible] = useState(false);
+  const [translationModalVisible, setTranslationModalVisible] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
   const [sourceLanguage, setSourceLanguage] = useState<string>("pt");
   const [targetLanguage, setTargetLanguage] = useState<string>("en");
   const [newPhraseText, setNewPhraseText] = useState<string>("");
   const [newPhraseCategory, setNewPhraseCategory] = useState<string>("General");
-  const [newPhraseLanguage, setNewPhraseLanguage] =
-    useState<string>(sourceLanguage);
   const [loading, setLoading] = useState(false);
+
+  const [translatingPhrase, setTranslatingPhrase] = useState<Phrase | null>(null);
+  const [translatedResult, setTranslatedResult] = useState<string>("");
+  const [isTranslating, setIsTranslating] = useState(false);
   useEffect(() => {
     fetchPhrases(sourceLanguage);
   }, [sourceLanguage]);
@@ -95,6 +102,27 @@ const PhrasesContent = () => {
     ]);
   };
 
+  const handlePhraseClick = async (phrase: Phrase) => {
+    setTranslatingPhrase(phrase);
+    setTranslationModalVisible(true);
+    setIsTranslating(true);
+    setTranslatedResult("");
+
+    try {
+      const result = await translationAPI.useTranslation(
+        sourceLanguage,
+        targetLanguage,
+        phrase.text
+      );
+      setTranslatedResult(result);
+      console.log("Translation result:", result);
+    } catch (error) {
+      setTranslatedResult("Erro na tradução.");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleAddPhrase = async () => {
     if (!newPhraseText.trim()) {
       alert("Phrase cannot be empty");
@@ -104,15 +132,19 @@ const PhrasesContent = () => {
     setLoading(true);
     const result = await addPhrase({
       text: newPhraseText,
-      language: newPhraseLanguage,
       category: newPhraseCategory,
     });
     setLoading(false);
-
     if (result.error) {
-      alert("Error updating: " + result.error);
+      alert("Error: " + result.error);
     } else {
-      setModalVisible(false);
+      setAddModalVisible(false);
+      if (result.detectedLanguage && result.detectedLanguage !== sourceLanguage) {
+        setSourceLanguage(result.detectedLanguage);
+        Alert.alert("Language Detected", `The phrase was identified as "${result.detectedLanguage}" and the list has been updated.`);
+      }
+      setNewPhraseText("");
+      setNewPhraseCategory("");
     }
   };
 
@@ -121,10 +153,58 @@ const PhrasesContent = () => {
       <View style={styles.headerContainer}>
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>Quick Phrases</Text>
       </View>
+      {/* Translation Modal */}
       <Portal>
         <Modal
-          visible={modalVisible}
-          onDismiss={() => setModalVisible(false)}
+          visible={translationModalVisible}
+          onDismiss={() => setTranslationModalVisible(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Text variant="titleLarge" style={{ marginBottom: 15, textAlign: 'center', fontWeight: 'bold' }}>
+            Translation
+          </Text>
+
+          {isTranslating ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+              <Text style={{ marginTop: 10 }}>Translating...</Text>
+            </View>
+          ) : (
+            <View>
+              {/* Original */}
+              <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Original ({sourceLanguage}):</Text>
+              <View style={[styles.resultBox, { backgroundColor: theme.colors.surfaceVariant }]}>
+                <Text style={{ fontSize: 16 }}>{translatingPhrase?.text}</Text>
+              </View>
+
+              <View style={{ alignItems: 'center', marginVertical: 10 }}>
+                <Ionicons name="arrow-down" size={24} color={theme.colors.primary} />
+              </View>
+
+              {/* Tradução */}
+              <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Translation ({targetLanguage}):</Text>
+              <View style={[styles.resultBox, { backgroundColor: theme.colors.secondaryContainer }]}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.colors.onSecondaryContainer }}>
+                  {translatedResult}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <Button
+            mode="contained"
+            onPress={() => setTranslationModalVisible(false)}
+            style={{ marginTop: 20 }}
+          >
+            Close
+          </Button>
+        </Modal>
+      </Portal>
+      {/* Add Phrase Modal*/}
+      <Portal>
+        <Modal
+          visible={addModalVisible}
+          onDismiss={() => setAddModalVisible(false)}
           contentContainerStyle={styles.modalContainer}
         >
           <Text
@@ -143,22 +223,15 @@ const PhrasesContent = () => {
           />
           <TextInput
             label="Category"
-            value={newPhraseText}
+            value={newPhraseCategory}
             onChangeText={setNewPhraseCategory}
-            mode="outlined"
-            style={{ marginBottom: 20 }}
-          />
-          <TextInput //later going to be change to an API call to auto detect the language
-            label="Phrase"
-            value={newPhraseText}
-            onChangeText={setNewPhraseLanguage}
             mode="outlined"
             style={{ marginBottom: 20 }}
           />
           <View style={styles.modalButtons}>
             <Button
               mode="text"
-              onPress={() => setModalVisible(false)}
+              onPress={() => setAddModalVisible(false)}
               style={{ marginRight: 10 }}
             >
               Cancel
@@ -212,6 +285,9 @@ const PhrasesContent = () => {
           )}
         />
       </View>
+      <Text style={{ marginBottom: 10, fontStyle: 'italic', color: '#666', textAlign: 'center' }}>
+        Tap a phrase to translate to {targetLanguage.toUpperCase()}
+      </Text>
       {isLoading ? (
         <ActivityIndicator size="large" style={{ marginTop: 20 }} />
       ) : (
@@ -223,6 +299,7 @@ const PhrasesContent = () => {
               item={item}
               isUserPhrase={userPhrases.some((p) => p.id === item.id)}
               onDelete={handleDelete}
+              onPress={handlePhraseClick}
             />
           )}
           ListEmptyComponent={
@@ -237,7 +314,7 @@ const PhrasesContent = () => {
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         color="white"
-        onPress={() => setModalVisible(true)}
+        onPress={() => setAddModalVisible(true)}
       />
     </View>
   );
@@ -301,4 +378,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     marginTop: 10,
   },
+  resultBox: {
+    padding: 15,
+    borderRadius: 10,
+    width: '100%',
+  }
 });
