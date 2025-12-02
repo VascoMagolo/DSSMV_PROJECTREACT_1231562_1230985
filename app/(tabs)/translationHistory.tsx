@@ -1,20 +1,21 @@
-import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
-  View,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator
+  View
 } from "react-native";
 import {
-  Text,
-  useTheme,
+  Divider,
   IconButton,
-  Divider
+  Text,
+  useTheme
 } from "react-native-paper";
-import { Ionicons } from "@expo/vector-icons";
-import { HistoryProvider, useHistory, TranslationRecord } from "../../src/context/HistoryContext";
+import { HistoryProvider, TranslationRecord, useHistory } from "../../src/context/HistoryContext";
 const HistoryItem = ({
   item,
   onDelete,
@@ -48,7 +49,7 @@ const HistoryItem = ({
         <Text style={[styles.originalText, { color: theme.colors.onSurfaceVariant }]}>
           {item.original_text}
         </Text>
-        <Ionicons name="arrow-down" size={16} color={theme.colors.outline} style={{marginVertical: 4}} />
+        <Ionicons name="arrow-down" size={16} color={theme.colors.outline} style={{ marginVertical: 4 }} />
         <Text style={[styles.translatedText, { color: theme.colors.primary }]}>
           {item.translated_text}
         </Text>
@@ -56,18 +57,18 @@ const HistoryItem = ({
 
       <Divider style={{ marginVertical: 8 }} />
       <View style={styles.actionsRow}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => onToggleFavorite(item.id, item.is_favorite)}
           style={styles.actionButton}
         >
-          <Ionicons 
-            name={item.is_favorite ? "star" : "star-outline"} 
-            size={22} 
-            color={item.is_favorite ? "#FFD700" : theme.colors.onSurfaceVariant} 
+          <Ionicons
+            name={item.is_favorite ? "star" : "star-outline"}
+            size={22}
+            color={item.is_favorite ? "#FFD700" : theme.colors.onSurfaceVariant}
           />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => onDelete(item.id)}
           style={styles.actionButton}
         >
@@ -81,10 +82,12 @@ const HistoryItem = ({
 const HistoryContent = () => {
   const { translationHistory, isLoading, refreshHistory, deleteTranslation, toggleFavorite } = useHistory();
   const theme = useTheme();
-
-  useEffect(() => {
-    refreshHistory();
-  }, []);
+  const router = useRouter()
+  useFocusEffect(
+    useCallback(() => {
+      refreshHistory();
+    }, [])
+  );
 
   const handleDelete = (id: string) => {
     Alert.alert("Delete", "Do you want to delete this translation from the history?", [
@@ -96,6 +99,11 @@ const HistoryContent = () => {
   return (
     <View style={styles.mainContainer}>
       <View style={styles.headerContainer}>
+        <IconButton
+          icon="arrow-left"
+          size={25}
+          onPress={() => router.push('/account')}
+        />
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>Translation History</Text>
       </View>
 
@@ -144,9 +152,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   headerContainer: {
+    flexDirection: 'row',
     alignItems: "center",
     marginBottom: 16,
     marginTop: 10,
+    gap: 10,
   },
   itemContainer: {
     borderRadius: 16,

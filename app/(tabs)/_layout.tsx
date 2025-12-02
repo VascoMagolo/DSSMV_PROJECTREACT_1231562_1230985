@@ -74,7 +74,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <MaterialIcons name="account-circle" size={28} color={color} />,
           href: isGuest ? null : undefined
         }}
-        
+      />
+      <Tabs.Screen
+        name="translationHistory" 
+        options={{
+          href: null,
+          title: 'History',
+        }}
       />
       <Tabs.Screen name="index" options={{ href: null }} />
     </Tabs>
