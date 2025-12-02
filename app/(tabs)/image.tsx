@@ -8,14 +8,14 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { languagesData } from '@/constants/values';
 import { styles as stylesA } from '@/constants/styles';
 import { translationAPI } from '@/src/api/translationAPI';
-
+import {useAuth} from "@/src/context/UserContext";
 export default function ImageScreen() {
   const theme = useTheme();
-  
+  const { user } = useAuth();
   const [extractedText, setExtractedText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [image, setImage] = useState<string | null>(null);
-  const [language, setLanguage] = useState<string>('pt');
+  const [language, setLanguage] = useState<string>(user?.preferred_language || 'en');
   const [translatedText, setTranslatedText] = useState<string>('');
   const handleImagePicked = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();

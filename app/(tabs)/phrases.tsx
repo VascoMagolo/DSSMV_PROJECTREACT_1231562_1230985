@@ -1,5 +1,12 @@
 import { styles as stylesA } from "@/constants/styles";
 import { languagesData } from "@/constants/values";
+import { translationAPI } from "@/src/api/translationAPI";
+import {
+  Phrase,
+  PhrasesProvider,
+  usePhrases,
+} from "@/src/context/PhrasesContext";
+import { useAuth } from "@/src/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
@@ -20,13 +27,6 @@ import {
   TextInput,
   useTheme,
 } from "react-native-paper";
-import {
-  Phrase,
-  PhrasesProvider,
-  usePhrases,
-} from "@/src/context/PhrasesContext";
-import { translationAPI } from "@/src/api/translationAPI";
-
 const PhraseItem = ({
   item,
   onDelete,
@@ -85,11 +85,12 @@ const PhrasesContent = () => {
   const [newPhraseText, setNewPhraseText] = useState<string>("");
   const [newPhraseCategory, setNewPhraseCategory] = useState<string>("General");
   const [loading, setLoading] = useState(false);
-
   const [translatingPhrase, setTranslatingPhrase] = useState<Phrase | null>(null);
   const [translatedResult, setTranslatedResult] = useState<string>("");
   const [isTranslating, setIsTranslating] = useState(false);
+  const { user } = useAuth();
   useEffect(() => {
+    setSourceLanguage(user?.preferred_language || "pt");
     fetchPhrases(sourceLanguage);
   }, [sourceLanguage]);
 
