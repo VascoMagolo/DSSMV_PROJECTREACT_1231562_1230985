@@ -1,10 +1,10 @@
+import { HistoryProvider } from '@/src/context/HistoryContext';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { AuthProvider, useAuth } from '../src/context/UserContext';
-import { PaperProvider, MD3LightTheme } from 'react-native-paper';
-import { AppColors } from '../constants/theme';
+import { ActivityIndicator, View } from 'react-native';
 import { ModalPortal } from 'react-native-modals';
+import { MD3LightTheme, PaperProvider } from 'react-native-paper';
+import { useAuth, UserProvider } from '../src/context/UserContext';
 
 const theme = {
   ...MD3LightTheme,
@@ -49,10 +49,12 @@ const InitialLayout = () => {
 export default function RootLayout() {
   return (
     <PaperProvider theme={theme}>
-      <AuthProvider>
+      <UserProvider>
+        <HistoryProvider>
         <InitialLayout />
          <ModalPortal />
-      </AuthProvider>
+        </HistoryProvider>
+      </UserProvider>
     </PaperProvider>
     
   );

@@ -1,13 +1,12 @@
-import { translationAPI } from '@/src/api/translationAPI';
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Button } from 'react-native-paper';
-import { Dropdown } from 'react-native-element-dropdown';
-import { Ionicons } from '@expo/vector-icons';
-import { IconButton, useTheme } from 'react-native-paper';
-import { languagesData } from '@/constants/values';
 import { styles as stylesA } from '@/constants/styles';
-
+import { languagesData } from '@/constants/values';
+import { translationAPI } from '@/src/api/translationAPI';
+import { useHistory } from '@/src/context/HistoryContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
+import { Button, IconButton, useTheme } from 'react-native-paper';
 type Data = {
   TT: number;
   message: string;
@@ -24,11 +23,13 @@ export default function TranslationScreen() {
   const [language, setLanguage] = useState<string>('pt');
   const [isLoading, setIsLoading] = useState(false);
   let text = 'Bom dia, como voce esta neste belo dia meu caro senhor!';// for testing purposes
+  const { saveTranslation } = useHistory();
   const handleTranslationClick = async () => {
     setIsLoading(true);
     try {
       const result = await translationAPI.detectAndTranslate(language, text);
       setTranslatedText(result.translatedText);
+      await saveTranslation(result.originalText, result.translatedText, result.detectedLanguage, result.targetLang);
       console.log(result);
     } catch (error) {
       console.error('Error during translation:', error);

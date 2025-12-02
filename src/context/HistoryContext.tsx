@@ -1,7 +1,7 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
-
 export type TranslationRecord = {
   id: string;
   user_id: string;
@@ -56,9 +56,11 @@ export const HistoryProvider = ({ children }: { children: React.ReactNode }) => 
       setIsLoading(false);
     }
   };
-  useEffect(() => {
-    fetchTranslationHistory();
-  }, [user]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTranslationHistory();
+    }, [user])
+  );
 
   const saveTranslation = async (original: string, translated: string, source: string, target: string) => {
     if (!user) return;
