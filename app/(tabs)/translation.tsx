@@ -1,7 +1,7 @@
 import { styles as stylesA } from "@/constants/styles";
 import { languagesData } from "@/constants/values";
-import { translationAPI } from "@/src/api/translationAPI";
 import { useHistory } from "@/src/context/HistoryContext";
+import { useTranslation } from "@/src/context/TranslationContext";
 import { useAuth } from "@/src/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from 'expo-clipboard';
@@ -9,30 +9,25 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { Button, IconButton, useTheme } from "react-native-paper";
-type Data = {
-  TT: number;
-  message: string;
-  origin_language: string;
-  target_language: string;
-  wordsNotToTranslate: string;
-  translation: string;
-};
 
 export default function TranslationScreen() {
   const { user } = useAuth();
   const theme = useTheme();
-  const [data, setData] = useState<Data | null>(null);
+  const { saveTranslation } = useHistory();
+  const { performDetectionAndTranslation, isLoading } = useTranslation(); 
+
   const [translatedText, setTranslatedText] = useState("");
   const [language, setLanguage] = useState<string>(
     user?.preferred_language || "pt"
   );
-  const [isLoading, setIsLoading] = useState(false);
-  let text = "Bom dia, como voce esta neste belo dia meu caro senhor!"; // for testing purposes
-  const { saveTranslation } = useHistory();
+
+  // Sample text to translate, in a real app this would come from voice input
+  let text = "Bom dia, como voce esta neste belo dia meu caro senhor!"; 
+
   const handleTranslationClick = async () => {
-    setIsLoading(true);
-    try {
-      const result = await translationAPI.detectAndTranslate(language, text);
+    const result = await performDetectionAndTranslation(text, language);
+    
+    if (result) {
       setTranslatedText(result.translatedText);
       await saveTranslation(
         result.originalText,
@@ -40,11 +35,6 @@ export default function TranslationScreen() {
         result.detectedLanguage,
         result.targetLang
       );
-      console.log(result);
-    } catch (error) {
-      console.error("Error during translation:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
   const copyToClipboard = () => {

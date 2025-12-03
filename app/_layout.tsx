@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { ModalPortal } from 'react-native-modals';
 import { MD3LightTheme, PaperProvider } from 'react-native-paper';
 import { useAuth, UserProvider } from '../src/context/UserContext';
+import { TranslationProvider } from '@/src/context/TranslationContext';
 
 const theme = {
   ...MD3LightTheme,
@@ -50,12 +51,13 @@ export default function RootLayout() {
   return (
     <PaperProvider theme={theme}>
       <UserProvider>
-        <HistoryProvider>
-        <InitialLayout />
-         <ModalPortal />
-        </HistoryProvider>
+        <TranslationProvider>
+          <HistoryProvider>
+            <InitialLayout />
+            <ModalPortal />
+          </HistoryProvider>
+        </TranslationProvider>
       </UserProvider>
     </PaperProvider>
-    
   );
 }
