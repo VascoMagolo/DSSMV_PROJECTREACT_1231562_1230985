@@ -1,7 +1,8 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useReducer } from 'react';
+import { translationAPI } from '../api/translationAPI';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
-import { translationAPI } from '../api/translationAPI';
+
 export type Phrase = {
   id: string;
   text: string;
@@ -11,10 +12,59 @@ export type Phrase = {
   translation?: string;
 };
 
-type PhrasesContextType = {
+type PhrasesState = {
   userPhrases: Phrase[];
   genericPhrases: Phrase[];
   isLoading: boolean;
+  error: string | null;
+};
+
+type PhrasesAction =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS_ALL'; payload: { user: Phrase[]; generic: Phrase[] } }
+  | { type: 'OPERATION_START' } 
+  | { type: 'DELETE_PHRASE'; payload: string }
+  | { type: 'SET_ERROR'; payload: string };
+
+const initialState: PhrasesState = {
+  userPhrases: [],
+  genericPhrases: [],
+  isLoading: false,
+  error: null,
+};
+
+const phrasesReducer = (state: PhrasesState, action: PhrasesAction): PhrasesState => {
+  switch (action.type) {
+    case 'FETCH_START':
+    case 'OPERATION_START':
+      return { ...state, isLoading: true, error: null };
+
+    case 'FETCH_SUCCESS_ALL':
+      return {
+        ...state,
+        isLoading: false,
+        userPhrases: action.payload.user,
+        genericPhrases: action.payload.generic,
+        error: null,
+      };
+
+    case 'DELETE_PHRASE':
+      return {
+        ...state,
+        isLoading: false,
+        userPhrases: state.userPhrases.filter((p) => p.id !== action.payload),
+      };
+
+    case 'SET_ERROR':
+      return { ...state, isLoading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+
+type PhrasesContextType = {
+  state: PhrasesState;
   fetchPhrases: (language: string) => Promise<void>;
   addPhrase(adds: Partial<Phrase>): Promise<{ error: string | null; detectedLanguage?: string }>;
   deletePhrase: (id: string) => Promise<void>;
@@ -24,79 +74,93 @@ const PhrasesContext = createContext<PhrasesContextType>({} as PhrasesContextTyp
 
 export const PhrasesProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  const [userPhrases, setUserPhrases] = useState<Phrase[]>([]);
-  const [genericPhrases, setGenericPhrases] = useState<Phrase[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const [state, dispatch] = useReducer(phrasesReducer, initialState);
 
   const fetchPhrases = useCallback(async (language: string) => {
-    setIsLoading(true);
+    dispatch({ type: 'FETCH_START' });
+
     try {
-      const { data: genericData } = await supabase
+      const { data: genericData, error: genericError } = await supabase
         .from('generic_phrases')
         .select('*')
         .eq('language', language);
 
-      setGenericPhrases(genericData || []);
+      if (genericError) throw genericError;
 
+      let userData: Phrase[] = [];
       if (user) {
-        const { data: userData } = await supabase
+        const { data, error: userError } = await supabase
           .from('user_phrases')
           .select('*')
           .eq('user_id', user.id)
           .eq('language', language)
           .order('created_at', { ascending: false });
 
-        setUserPhrases(userData || []);
-      } else {
-        setUserPhrases([]);
+        if (userError) throw userError;
+        userData = (data as Phrase[]) || [];
       }
+      dispatch({
+        type: 'FETCH_SUCCESS_ALL',
+        payload: {
+          generic: (genericData as Phrase[]) || [],
+          user: userData,
+        },
+      });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching phrases:', error);
-    } finally {
-      setIsLoading(false);
+      dispatch({ type: 'SET_ERROR', payload: error.message || 'Failed to fetch phrases.' });
     }
   }, [user]);
 
   const addPhrase = async (adds: Partial<Phrase>): Promise<{ error: string | null; detectedLanguage?: string }> => {
     if (!user) return { error: 'Not authenticated' };
     if (!adds.text) return { error: 'Text is required' };
+
+    dispatch({ type: 'OPERATION_START' });
+
     try {
       const detectedLang = await translationAPI.detectLanguage(adds.text);
-      console.log("Detected language:", detectedLang);
+      
       const { error } = await supabase.from('user_phrases').insert({
         user_id: user.id,
         text: adds.text,
         language: detectedLang,
         category: adds.category || 'Personal',
       });
-      if (error) {
-        console.error("Error adding phrase:", error);
-        throw error;
-      }
+
+      if (error) throw error;
       await fetchPhrases(detectedLang);
+      
       return { error: null, detectedLanguage: detectedLang };
+
     } catch (err: any) {
       console.error("Error adding phrase:", err);
+      dispatch({ type: 'SET_ERROR', payload: err.message });
       return { error: err.message || String(err) };
     }
   };
 
   const deletePhrase = async (id: string) => {
+    if (!user) return;
+    dispatch({ type: 'OPERATION_START' });
+
     try {
       const { error } = await supabase.from('user_phrases').delete().eq('id', id);
       if (error) throw error;
-      setUserPhrases(prev => prev.filter(p => p.id !== id));
-    } catch (err) {
+
+      dispatch({ type: 'DELETE_PHRASE', payload: id });
+
+    } catch (err: any) {
       console.error("Error deleting phrase:", err);
+      dispatch({ type: 'SET_ERROR', payload: err.message });
     }
   };
 
   return (
     <PhrasesContext.Provider value={{
-      userPhrases,
-      genericPhrases,
-      isLoading,
+      state,
       fetchPhrases,
       addPhrase,
       deletePhrase

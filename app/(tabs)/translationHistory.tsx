@@ -15,7 +15,7 @@ import {
   Text,
   useTheme
 } from "react-native-paper";
-import { HistoryProvider, TranslationRecord, useHistory } from "../../src/context/HistoryContext";
+import { TranslationHistoryProvider, TranslationRecord, useHistory } from "../../src/context/TranslationHistoryContext";
 const HistoryItem = ({
   item,
   onDelete,
@@ -139,9 +139,9 @@ const HistoryContent = () => {
 
 export default function TranslationHistoryScreen() {
   return (
-    <HistoryProvider>
+    <TranslationHistoryProvider>
       <HistoryContent />
-    </HistoryProvider>
+    </TranslationHistoryProvider>
   );
 }
 

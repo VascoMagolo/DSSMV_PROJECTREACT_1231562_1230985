@@ -1,11 +1,12 @@
-import { HistoryProvider } from '@/src/context/HistoryContext';
+import { TranslationProvider } from '@/src/context/TranslationContext';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { ModalPortal } from 'react-native-modals';
 import { MD3LightTheme, PaperProvider } from 'react-native-paper';
+import { PhrasesProvider } from '../src/context/PhrasesContext';
+import { TranslationHistoryProvider } from '../src/context/TranslationHistoryContext';
 import { useAuth, UserProvider } from '../src/context/UserContext';
-import { TranslationProvider } from '@/src/context/TranslationContext';
 
 const theme = {
   ...MD3LightTheme,
@@ -52,10 +53,12 @@ export default function RootLayout() {
     <PaperProvider theme={theme}>
       <UserProvider>
         <TranslationProvider>
-          <HistoryProvider>
+          <TranslationHistoryProvider>
+            <PhrasesProvider>
             <InitialLayout />
             <ModalPortal />
-          </HistoryProvider>
+            </PhrasesProvider>
+          </TranslationHistoryProvider>
         </TranslationProvider>
       </UserProvider>
     </PaperProvider>

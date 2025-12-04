@@ -1,7 +1,7 @@
 import { styles as stylesA } from "@/constants/styles";
 import { languagesData } from "@/constants/values";
-import { useHistory } from "@/src/context/HistoryContext";
 import { useTranslation } from "@/src/context/TranslationContext";
+import { useHistory } from "@/src/context/TranslationHistoryContext";
 import { useAuth } from "@/src/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from 'expo-clipboard';

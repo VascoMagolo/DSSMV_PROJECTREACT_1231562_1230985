@@ -10,3 +10,10 @@ export const languagesData = [
   { label: '한국어', value: 'ko' },
   { label: 'Русский', value: 'ru' },
 ];
+
+export type Action<T> =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; payload: T[] }
+  | { type: 'OPERATION_START' }
+  | { type: 'SET_ERROR'; payload: string }
+  | { type: 'DELETE_PHRASE'; payload: string };

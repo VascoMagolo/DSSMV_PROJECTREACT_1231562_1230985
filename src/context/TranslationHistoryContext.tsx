@@ -1,7 +1,9 @@
+import { Action } from '@/constants/values';
 import { useFocusEffect } from 'expo-router';
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useReducer } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
+
 export type TranslationRecord = {
   id: string;
   user_id: string;
@@ -13,9 +15,45 @@ export type TranslationRecord = {
   timestamp: string;
 };
 
-type HistoryContextType = {
+type TranslationHistoryState = {
   translationHistory: TranslationRecord[];
   isLoading: boolean;
+  error: string | null;
+};
+type TranslationHistoryAction = Action<TranslationRecord>;
+
+const initialState: TranslationHistoryState = {
+  translationHistory: [],
+  isLoading: false,
+  error: null,
+};
+
+const historyReducer = (state: TranslationHistoryState, action: TranslationHistoryAction): TranslationHistoryState => {
+  switch (action.type) {
+    case 'FETCH_START':
+    case 'OPERATION_START':
+      return { ...state, isLoading: true, error: null };
+    
+    case 'FETCH_SUCCESS':
+      return { 
+        ...state, 
+        isLoading: false, 
+        translationHistory: action.payload, 
+        error: null 
+      };
+    
+    case 'SET_ERROR':
+      return { ...state, isLoading: false, error: action.payload };
+      
+    default:
+      return state;
+  }
+};
+
+type TranslationHistoryContextType = {
+  translationHistory: TranslationRecord[];
+  isLoading: boolean;
+  error: string | null;
   refreshHistory: () => Promise<void>;
   saveTranslation: (
     original: string, 
@@ -27,17 +65,18 @@ type HistoryContextType = {
   toggleFavorite: (id: string, isFavorite: boolean) => Promise<void>;
 };
 
-const HistoryContext = createContext<HistoryContextType>({} as HistoryContextType);
+const HistoryContext = createContext<TranslationHistoryContextType>({} as TranslationHistoryContextType);
 
-export const HistoryProvider = ({ children }: { children: React.ReactNode }) => {
+export const TranslationHistoryProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  const [translationHistory, setTranslationHistory] = useState<TranslationRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const fetchTranslationHistory = async () => {
+  const [state, dispatch] = useReducer(historyReducer, initialState);
+
+  const fetchTranslationHistory = useCallback(async () => {
     if (!user) return;
     
+    dispatch({ type: 'FETCH_START' });
+
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('translations')
         .select('*')
@@ -47,19 +86,18 @@ export const HistoryProvider = ({ children }: { children: React.ReactNode }) => 
 
       if (error) throw error;
 
-      if (data) {
-        setTranslationHistory(data as TranslationRecord[]);
-      }
-    } catch (error) {
+      dispatch({ type: 'FETCH_SUCCESS', payload: (data as TranslationRecord[]) || [] });
+
+    } catch (error: any) {
       console.error('Error fetching history:', error);
-    } finally {
-      setIsLoading(false);
+      dispatch({ type: 'SET_ERROR', payload: error.message || 'Erro ao carregar histórico' });
     }
-  };
+  }, [user]);
+
   useFocusEffect(
     useCallback(() => {
       fetchTranslationHistory();
-    }, [user])
+    }, [fetchTranslationHistory])
   );
 
   const saveTranslation = async (original: string, translated: string, source: string, target: string) => {
@@ -79,21 +117,32 @@ export const HistoryProvider = ({ children }: { children: React.ReactNode }) => 
       if (error) throw error;
       await fetchTranslationHistory();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving translation:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
     }
   };
 
   const deleteTranslation = async (id: string) => {
+    if (!user) return;
+
+    dispatch({ type: 'OPERATION_START' });
+
     try {
       const { error } = await supabase.from('translations').delete().eq('id', id);
       if (error) throw error;
-      setTranslationHistory(prev => prev.filter(item => item.id !== id));
-    } catch (error) {
+      
+      await fetchTranslationHistory();
+      
+    } catch (error: any) {
       console.error('Error deleting translation:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
     }
   };
+
   const toggleFavorite = async (id: string, currentState: boolean) => {
+    if (!user) return;
+
     try {
       const { error } = await supabase
         .from('translations')
@@ -101,17 +150,20 @@ export const HistoryProvider = ({ children }: { children: React.ReactNode }) => 
         .eq('id', id);
 
       if (error) throw error;
+      
       await fetchTranslationHistory(); 
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating favorite:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
     }
   };
 
   return (
     <HistoryContext.Provider value={{
-      translationHistory,
-      isLoading,
+      translationHistory: state.translationHistory,
+      isLoading: state.isLoading,
+      error: state.error,
       refreshHistory: fetchTranslationHistory,
       saveTranslation,
       deleteTranslation,
@@ -124,6 +176,6 @@ export const HistoryProvider = ({ children }: { children: React.ReactNode }) => 
 
 export const useHistory = () => {
   const context = useContext(HistoryContext);
-  if (!context) throw new Error("useHistory must be used within a HistoryProvider");
+  if (!context) throw new Error("useHistory must be used within a TranslationHistoryProvider");
   return context;
 };
