@@ -1,4 +1,4 @@
-import { Action } from '@/constants/values';
+import { Action } from '@/src/types/types';
 import { useFocusEffect } from 'expo-router';
 import React, { createContext, useCallback, useContext, useReducer } from 'react';
 import { supabase } from '../services/supabase';

@@ -1,14 +1,14 @@
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { styles as stylesA } from '@/constants/styles';
+import { ocrAPI } from '@/src/api/ocrAPI';
+import { translationAPI } from '@/src/api/translationAPI';
+import { useAuth } from "@/src/context/UserContext";
+import { languagesData } from '@/src/types/types';
+import Ionicons from '@expo/vector-icons/build/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Button, useTheme } from 'react-native-paper';
-import { ocrAPI } from '@/src/api/ocrAPI';
-import Ionicons from '@expo/vector-icons/build/Ionicons';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { languagesData } from '@/constants/values';
-import { styles as stylesA } from '@/constants/styles';
-import { translationAPI } from '@/src/api/translationAPI';
-import {useAuth} from "@/src/context/UserContext";
+import { Button, useTheme } from 'react-native-paper';
 export default function ImageScreen() {
   const theme = useTheme();
   const { user } = useAuth();

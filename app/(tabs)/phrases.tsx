@@ -1,5 +1,4 @@
 import { styles as stylesA } from "@/constants/styles";
-import { languagesData } from "@/constants/values";
 import {
   Phrase,
   PhrasesProvider,
@@ -7,6 +6,7 @@ import {
 } from "@/src/context/PhrasesContext";
 import { useTranslation } from "@/src/context/TranslationContext";
 import { useAuth } from "@/src/context/UserContext";
+import { languagesData } from "@/src/types/types";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {

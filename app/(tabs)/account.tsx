@@ -1,6 +1,6 @@
 import { styles as stylesA } from "@/constants/styles";
-import { languagesData } from "@/constants/values";
 import { useAuth } from "@/src/context/UserContext";
+import { languagesData } from "@/src/types/types";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -190,7 +190,7 @@ export default function AccountScreen() {
           <List.Item
             title="Image Translation History"
             left={(props) => <List.Icon {...props} icon="image" />}
-            onPress={() => alert("Future functionality")}
+            onPress={() => router.push('/history/ocr')}
             disabled={isGuest}
           />
           <Divider />
@@ -204,7 +204,7 @@ export default function AccountScreen() {
           <List.Item
             title="Voice History"
             left={(props) => <List.Icon {...props} icon="microphone" />}
-            onPress={() => router.push('/translationHistory')}
+            onPress={() => router.push('/history/translation')}
             disabled={isGuest}
           />
         </List.Section>

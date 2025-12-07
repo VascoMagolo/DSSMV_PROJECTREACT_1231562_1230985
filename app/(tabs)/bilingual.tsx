@@ -1,10 +1,10 @@
+import { styles as stylesA } from '@/constants/styles';
+import { languagesData } from '@/src/types/types';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { IconButton, useTheme } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
-import { languagesData } from '@/constants/values';
-import { styles as stylesA } from '@/constants/styles';
 
 const TranslationCard = ({
   language,

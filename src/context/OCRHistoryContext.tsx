@@ -1,6 +1,6 @@
+import { Action } from '@/src/types/types';
 import { useFocusEffect } from 'expo-router';
 import React, { createContext, useCallback, useContext, useReducer } from 'react';
-import { Action } from '../../constants/values';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
 
@@ -9,8 +9,9 @@ export type OCRRecord = {
     user_id: string;
     image_url: string;
     extracted_text: string;
-    translation_text: string;
+    translated_text: string;
     target_language: string;
+    source_language: string;
     timestamp: string;
 };
 
@@ -85,7 +86,7 @@ export const OCRHistoryProvider = ({ children }: { children: React.ReactNode }) 
         }, [fetchOCRHistory])
     );
 
-    const saveOCRRecord = async (imageUrl: string, extractedText: string, translationText: string, targetLanguage: string) => {
+    const saveOCRRecord = async (imageUrl: string, extractedText: string, translated_text: string, targetLanguage: string) => {
         if (!user) return;
 
         dispatch({ type: 'OPERATION_START' });
@@ -97,8 +98,9 @@ export const OCRHistoryProvider = ({ children }: { children: React.ReactNode }) 
                     user_id: user.id,
                     image_url: imageUrl,
                     extracted_text: extractedText,
-                    translation_text: translationText,
+                    translated_text: translated_text,
                     target_language: targetLanguage,
+                    source_language: 'auto', // later change to actual source language if needed
                     timestamp: new Date().toISOString(),
                 });
 

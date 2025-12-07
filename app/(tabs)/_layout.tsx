@@ -74,13 +74,6 @@ export default function TabLayout() {
           href: isGuest ? null : undefined
         }}
       />
-      <Tabs.Screen
-        name="translationHistory" 
-        options={{
-          href: null,
-          title: 'History',
-        }}
-      />
       <Tabs.Screen name="index" options={{ href: null }} />
     </Tabs>
   );
