@@ -1,11 +1,12 @@
 import { styles as stylesA } from '@/constants/styles';
+import { useTranslation } from "@/src/context/TranslationContext";
 import { languagesData } from '@/src/types/types';
 import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { IconButton, useTheme } from 'react-native-paper';
-
 const TranslationCard = ({
   language,
   setLanguage,
@@ -21,7 +22,6 @@ const TranslationCard = ({
       { backgroundColor: theme.colors.surface },
       isRotated && { transform: [{ rotate: '180deg' }] }
     ]}>
-
       <View style={styles.headerRow}>
         <Dropdown
           style={stylesA.dropdown}
@@ -62,14 +62,20 @@ const TranslationCard = ({
 
 export default function BilingualScreen() {
   const theme = useTheme();
-  const [langA, setLangA] = useState<string | null>('en');
-  const [langB, setLangB] = useState<string | null>('pt');
+  const [langA, setLangA] = useState<string>('en');
+  const [langB, setLangB] = useState<string>('pt');
 
   const [textA, setTextA] = useState('');
   const [textB, setTextB] = useState('');
-
   const [listeningA, setListeningA] = useState(false);
   const [listeningB, setListeningB] = useState(false);
+  const { performDetectionAndTranslation, isLoading } = useTranslation();
+  const [translatedText, setTranslatedText] = useState("");
+
+  const handleTTS = async (text: string, language: string) => {
+      Speech.speak(text, { language: language });
+    };
+
   const handleSwap = () => {
     const tempLang = langA;
     const tempText = textA;
@@ -81,14 +87,30 @@ export default function BilingualScreen() {
     setTextB(tempText);
   };
 
-  const handleSpeakA = () => {
+  const handleSpeakA = async () => {
     setListeningA(!listeningA);
     if (!listeningA) setTextA("Listening...");
+    let text = "Bom dia, como voce esta neste belo dia meu caro senhor!"; // Sample text
+    const result = await performDetectionAndTranslation(text, langB);
+
+    if (result) {
+      setTranslatedText(result.translatedText);
+      setTextB(result.translatedText);
+    }
+    handleTTS(textB, langB);
   };
 
-  const handleSpeakB = () => {
+  const handleSpeakB = async () => {
     setListeningB(!listeningB);
     if (!listeningB) setTextB("Listening...");
+    let text = "Good Morning, how are you on this beautiful day my dear sir!"; // Sample text
+    const result = await performDetectionAndTranslation(text, langA);
+
+    if (result) {
+      setTranslatedText(result.translatedText);
+      setTextA(result.translatedText);
+    }
+    handleTTS(textA,langA);
   };
 
   return (
@@ -137,7 +159,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   card: {
-    flex: 1, 
+    flex: 1,
     borderRadius: 25,
     padding: 20,
     marginVertical: 5,
@@ -146,7 +168,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    justifyContent: 'space-between', 
+    justifyContent: 'space-between',
   },
   headerRow: {
     flexDirection: 'row',
@@ -183,11 +205,11 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10, 
-    marginVertical: -25, 
+    zIndex: 10,
+    marginVertical: -25,
   },
   swapButton: {
     borderWidth: 4,
-    borderColor: '#F0F2F5', 
+    borderColor: '#F0F2F5',
   }
 });

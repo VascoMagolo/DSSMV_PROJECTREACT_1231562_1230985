@@ -5,6 +5,7 @@ import { useAuth } from "@/src/context/UserContext";
 import { languagesData } from "@/src/types/types";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from 'expo-clipboard';
+import * as Speech from 'expo-speech';
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
@@ -36,6 +37,9 @@ export default function TranslationScreen() {
         result.targetLang
       );
     }
+  };
+  const handleTTS = async () => {
+    Speech.speak(translatedText, { language: language });
   };
   const copyToClipboard = () => {
     Clipboard.setStringAsync(translatedText);
@@ -88,7 +92,7 @@ export default function TranslationScreen() {
         </Text>
         <View style={styles.actionRow}>
           <IconButton icon="content-copy" size={20} onPress={copyToClipboard} />
-          <IconButton icon="volume-high" size={20} onPress={() => {}} />
+          <IconButton icon="volume-high" size={20} onPress={handleTTS} />
         </View>
       </View>
     </View>
