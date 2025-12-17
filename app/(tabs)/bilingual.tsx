@@ -1,4 +1,5 @@
 import { styles as stylesA } from '@/constants/styles';
+import { useHistory } from '@/src/context/BilingualHistoryContext';
 import { useTranslation } from "@/src/context/TranslationContext";
 import { languagesData } from '@/src/types/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -64,7 +65,7 @@ export default function BilingualScreen() {
   const theme = useTheme();
   const [langA, setLangA] = useState<string>('en');
   const [langB, setLangB] = useState<string>('pt');
-
+  const {saveTranslation} = useHistory();
   const [textA, setTextA] = useState('');
   const [textB, setTextB] = useState('');
   const [listeningA, setListeningA] = useState(false);
@@ -75,7 +76,7 @@ export default function BilingualScreen() {
   const handleTTS = async (text: string, language: string) => {
       Speech.speak(text, { language: language });
     };
-
+  
   const handleSwap = () => {
     const tempLang = langA;
     const tempText = textA;
@@ -87,32 +88,56 @@ export default function BilingualScreen() {
     setTextB(tempText);
   };
 
-  const handleSpeakA = async () => {
-    setListeningA(!listeningA);
-    if (!listeningA) setTextA("Listening...");
-    let text = "Bom dia, como voce esta neste belo dia meu caro senhor!"; // Sample text
-    const result = await performDetectionAndTranslation(text, langB);
+const handleSpeakA = async () => {
+    const isCurrentlyListening = listeningA;
+    setListeningA(!isCurrentlyListening); 
 
-    if (result) {
-      setTranslatedText(result.translatedText);
-      setTextB(result.translatedText);
+    if (!isCurrentlyListening) {
+        setTextA("Listening...");
+        let text = "Bom dia, como voce esta neste belo dia meu caro senhor!"; 
+        const result = await performDetectionAndTranslation(text, langB);
+
+        if (result) {
+            setTranslatedText(result.translatedText);
+            setTextB(result.translatedText);
+            
+            // ATUALIZAÇÃO AQUI: Passamos 'A' como speakerSide
+            await saveTranslation(
+                result.originalText,    // original
+                result.translatedText,  // translated
+                langA,                  // source (Quem falou)
+                langB,                  // target
+                'A'                     // speaker_side
+            );
+            handleTTS(result.translatedText, langB);
+        }
     }
-    handleTTS(textB, langB);
   };
 
   const handleSpeakB = async () => {
-    setListeningB(!listeningB);
-    if (!listeningB) setTextB("Listening...");
-    let text = "Good Morning, how are you on this beautiful day my dear sir!"; // Sample text
-    const result = await performDetectionAndTranslation(text, langA);
+    const isCurrentlyListening = listeningB;
+    setListeningB(!isCurrentlyListening); 
+    if (!isCurrentlyListening) {
+        setTextB("Listening...");
+        let text = "Good Morning, how are you on this beautiful day my dear sir!"; 
+        const result = await performDetectionAndTranslation(text, langA);
 
-    if (result) {
-      setTranslatedText(result.translatedText);
-      setTextA(result.translatedText);
+        if (result) {
+            setTranslatedText(result.translatedText);
+            setTextA(result.translatedText);
+
+            // ATUALIZAÇÃO AQUI: Passamos 'B' como speakerSide e trocamos a ordem das linguas
+            await saveTranslation(
+                result.originalText,    // original
+                result.translatedText,  // translated
+                langB,                  // source (Quem falou)
+                langA,                  // target
+                'B'                     // speaker_side
+            );
+            handleTTS(result.translatedText, langA);
+        }
     }
-    handleTTS(textA,langA);
   };
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -197,7 +197,7 @@ export default function AccountScreen() {
           <List.Item
             title="Conversation History"
             left={(props) => <List.Icon {...props} icon="account-voice" />}
-            onPress={() => alert("Future functionality")}
+            onPress={() => router.push('/history/bilingual')}
             disabled={isGuest}
           />
           <Divider />

@@ -1,3 +1,4 @@
+import { BilingualHistoryProvider } from '@/src/context/BilingualHistoryContext';
 import { TranslationProvider } from '@/src/context/TranslationContext';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
@@ -54,10 +55,12 @@ export default function RootLayout() {
       <UserProvider>
         <TranslationProvider>
           <TranslationHistoryProvider>
+            <BilingualHistoryProvider>
             <PhrasesProvider>
             <InitialLayout />
             <ModalPortal />
             </PhrasesProvider>
+            </BilingualHistoryProvider>
           </TranslationHistoryProvider>
         </TranslationProvider>
       </UserProvider>
