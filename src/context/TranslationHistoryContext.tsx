@@ -90,7 +90,7 @@ export const TranslationHistoryProvider = ({ children }: { children: React.React
 
     } catch (error: any) {
       console.error('Error fetching history:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message || 'Erro ao carregar histórico' });
+      dispatch({ type: 'SET_ERROR', payload: error.message || 'Error fetching history' });
     }
   }, [user]);
 
