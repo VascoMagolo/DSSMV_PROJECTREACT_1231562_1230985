@@ -101,13 +101,13 @@ const handleSpeakA = async () => {
             setTranslatedText(result.translatedText);
             setTextB(result.translatedText);
             
-            // ATUALIZAÇÃO AQUI: Passamos 'A' como speakerSide
+           
             await saveTranslation(
-                result.originalText,    // original
-                result.translatedText,  // translated
-                langA,                  // source (Quem falou)
-                langB,                  // target
-                'A'                     // speaker_side
+                result.originalText,   
+                result.translatedText,
+                langA,                
+                langB,                 
+                'A'                    
             );
             handleTTS(result.translatedText, langB);
         }
@@ -126,13 +126,13 @@ const handleSpeakA = async () => {
             setTranslatedText(result.translatedText);
             setTextA(result.translatedText);
 
-            // ATUALIZAÇÃO AQUI: Passamos 'B' como speakerSide e trocamos a ordem das linguas
+         
             await saveTranslation(
-                result.originalText,    // original
-                result.translatedText,  // translated
-                langB,                  // source (Quem falou)
-                langA,                  // target
-                'B'                     // speaker_side
+                result.originalText,    
+                result.translatedText,  
+                langB,                 
+                langA,                 
+                'B'                    
             );
             handleTTS(result.translatedText, langA);
         }

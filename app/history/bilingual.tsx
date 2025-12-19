@@ -1,4 +1,4 @@
-import { BilingualHistoryProvider, BilingualRecord, useHistory } from "@/src/context/BilingualHistoryContext"; // Ajuste o import conforme necessário
+import { BilingualHistoryProvider, BilingualRecord, useHistory } from "@/src/context/BilingualHistoryContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from "react";
@@ -63,7 +63,7 @@ const ChatBubble = ({
     return (
         <View style={[styles.chatBubbleContainer, alignStyle]}>
             <Text style={[styles.speakerLabel, { color: theme.colors.outline, textAlign: isSideA ? 'right' : 'left' }]}>
-                {isSideA ? `${item.source_lang.toUpperCase()}` : `${item.source_lang.toUpperCase()}`}
+                {isSideA ? `${item.target_lang.toUpperCase()}` : `${item.source_lang.toUpperCase()}`}
             </Text>
 
             <View style={[styles.messageBubble, { backgroundColor: bubbleColor, borderBottomRightRadius: isSideA ? 4 : 16, borderTopLeftRadius: isSideA ? 16 : 4 }]}>
@@ -109,7 +109,7 @@ const BilingualHistoryScreen = () => {
     useFocusEffect(
         useCallback(() => {
             refreshHistory();
-        }, [])
+        }, [refreshHistory])
     );
 
     const groupedHistory = useMemo(() => {
@@ -130,7 +130,7 @@ const BilingualHistoryScreen = () => {
             })
             .map(date => ({
                 date,
-                data: groups[date].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) // Ordena as mensagens dentro do chat (antigas -> novas)
+                data: groups[date].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) 
             }));
     }, [bilingualHistory]);
     const handleDayPress = (date: string, records: BilingualRecord[]) => {
@@ -149,8 +149,13 @@ const BilingualHistoryScreen = () => {
                     style: "destructive",
                     onPress: async () => {
                         await deleteConversation(id);
-                        setSelectedRecords(prev => prev.filter(item => item.id !== id));
-                        if (selectedRecords.length <= 1) setModalVisible(false);
+                        setSelectedRecords(prev => {
+                            const updated = prev.filter(item => item.id !== id);
+                            if (updated.length === 0) {
+                                setModalVisible(false);
+                            }
+                            return updated;
+                        });
                     },
                 },
             ]
@@ -189,7 +194,7 @@ const BilingualHistoryScreen = () => {
                     )}
                     contentContainerStyle={{ padding: 10 }}
                     ListEmptyComponent={
-                        <Text style={{textAlign: 'center', marginTop: 50, color: '#999'}}>Nenhum histórico encontrado.</Text>
+                        <Text style={{textAlign: 'center', marginTop: 50, color: '#999'}}>No history found.</Text>
                     }
                 />
             )}

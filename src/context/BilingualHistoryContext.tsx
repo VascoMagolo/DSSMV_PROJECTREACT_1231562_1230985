@@ -3,16 +3,14 @@ import { useFocusEffect } from 'expo-router';
 import React, { createContext, useCallback, useContext, useReducer } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
-
-// --- TIPO ATUALIZADO ---
 export type BilingualRecord = {
   id: string;
   user_id: string;
-  original_text: string;    // Antes: text_A
-  translated_text: string;  // Antes: text_B
-  source_lang: string;      // Antes: language_A
-  target_lang: string;      // Antes: language_B
-  speaker_side: 'A' | 'B';  // NOVO CAMPO
+  original_text: string;   
+  translated_text: string; 
+  source_lang: string;      
+  target_lang: string;      
+  speaker_side: 'A' | 'B';  
   is_favorite: boolean;
   created_at: string;
 };
@@ -60,7 +58,7 @@ type BilingualHistoryContextType = {
         translatedText: string,
         sourceLang: string,
         targetLang: string,
-        speakerSide: 'A' | 'B' // NOVO PARÂMETRO
+        speakerSide: 'A' | 'B'
     ) => Promise<void>;
     deleteConversation: (id: string) => Promise<void>;
     setConversationFavorite: (id: string, isFavorite: boolean) => Promise<void>;
@@ -80,7 +78,7 @@ export const BilingualHistoryProvider: React.FC<{ children: React.ReactNode }> =
                 .from('bilingual_history')
                 .select('*')
                 .eq('user_id', user.id)
-                .order('created_at', { ascending: false }); // Do mais recente para o mais antigo
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             dispatch({ type: 'FETCH_SUCCESS', payload: data || [] });
@@ -100,7 +98,6 @@ export const BilingualHistoryProvider: React.FC<{ children: React.ReactNode }> =
         if (!user) return;
         dispatch({ type: 'OPERATION_START' });
         try {
-            // Mapeamento para as colunas novas da Supabase
             const { error } = await supabase
                 .from('bilingual_history')
                 .insert({
@@ -111,7 +108,7 @@ export const BilingualHistoryProvider: React.FC<{ children: React.ReactNode }> =
                     target_lang: targetLang,
                     speaker_side: speakerSide,
                     is_favorite: false,
-                    created_at: new Date().toISOString(),
+                    //created_at: new Date().toISOString(),
                 });
 
             if (error) throw error;
