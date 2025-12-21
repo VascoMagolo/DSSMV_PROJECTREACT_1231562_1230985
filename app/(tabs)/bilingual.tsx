@@ -1,4 +1,5 @@
 import { styles as stylesA } from '@/constants/styles';
+import { useHistory } from '@/src/context/BilingualHistoryContext';
 import { useTranslation } from "@/src/context/TranslationContext";
 import { languagesData } from '@/src/types/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +15,6 @@ import {
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { IconButton, useTheme } from 'react-native-paper';
-
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -83,7 +83,7 @@ export default function BilingualScreen() {
   const theme = useTheme();
   const [langA, setLangA] = useState<string>('en');
   const [langB, setLangB] = useState<string>('pt');
-
+  const { saveTranslation } = useHistory(); // Da 1ª versão
   const [textA, setTextA] = useState('');
   const [textB, setTextB] = useState('');
   const [listeningA, setListeningA] = useState(false);
@@ -92,6 +92,7 @@ export default function BilingualScreen() {
   const [translatedText, setTranslatedText] = useState("");
   const [hasPermission, setHasPermission] = useState(false);
 
+  // Speech Recognition Events (da 2ª versão)
   useSpeechRecognitionEvent("result", (event) => {
     if (!event.results || event.results.length === 0) return;
     const transcript = event.results[0].transcript || "";
@@ -148,6 +149,16 @@ export default function BilingualScreen() {
     if (result) {
       setTranslatedText(result.translatedText);
       setTextB(result.translatedText);
+      
+      // Salva no histórico (da 1ª versão)
+      await saveTranslation(
+        result.originalText, 
+        result.translatedText,
+        langA, 
+        langB, 
+        'A'
+      );
+      handleTTS(result.translatedText, langB);
     }
   };
 
@@ -157,19 +168,27 @@ export default function BilingualScreen() {
     if (result) {
       setTranslatedText(result.translatedText);
       setTextA(result.translatedText);
+      
+      // Salva no histórico (da 1ª versão)
+      await saveTranslation(
+        result.originalText,
+        result.translatedText,
+        langB,
+        langA,
+        'B'
+      );
+      handleTTS(result.translatedText, langA);
     }
   };
 
   const startRecognition = async (listenLang: string) => {
-    if (!hasPermission) {
-      return;
-    }
+    if (!hasPermission) return;
 
     const locale = localeMap[listenLang] || 'en-US';
 
     try {
       await ExpoSpeechRecognitionModule.start({
-        lang: locale,          
+        lang: locale,
         interimResults: true,
         continuous: false,
       });
@@ -196,7 +215,7 @@ export default function BilingualScreen() {
     setListeningA(true);
     setListeningB(false);
     setTextA("Listening...");
-    await startRecognition(langA); 
+    await startRecognition(langA);
   };
 
   const handleSpeakB = async () => {
@@ -209,7 +228,7 @@ export default function BilingualScreen() {
     setListeningB(true);
     setListeningA(false);
     setTextB("Listening...");
-    await startRecognition(langB); 
+    await startRecognition(langB);
   };
 
   return (

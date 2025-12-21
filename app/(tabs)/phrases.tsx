@@ -123,7 +123,6 @@ const PhrasesContent = () => {
       targetLanguage,
       phrase.text
     );
-    
     if (result) {
       setTranslatedResult(result);
     } else {

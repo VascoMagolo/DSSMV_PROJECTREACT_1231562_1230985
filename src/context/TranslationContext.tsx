@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState } from "react";
 import { translationAPI } from "@/src/api/translationAPI";
+import React, { createContext, useContext, useState } from "react";
 
 type TranslationResult = {
   originalText: string;
@@ -12,9 +12,9 @@ type TranslationContextType = {
   isLoading: boolean;
   error: string | null;
   performTranslation: (
-    text: string,
     sourceLang: string,
-    targetLang: string
+    targetLang: string,
+    text: string
   ) => Promise<string | null>;
   performDetectionAndTranslation: (
     text: string,
@@ -38,9 +38,9 @@ export const TranslationProvider = ({
   const clearError = () => setError(null);
 
   const performTranslation = async (
-    text: string,
     sourceLang: string,
-    targetLang: string
+    targetLang: string,
+    text: string
   ) => {
     setIsLoading(true);
     setError(null);
