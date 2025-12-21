@@ -1,323 +1,264 @@
-import { BilingualHistoryProvider, BilingualRecord, useHistory } from "@/src/context/BilingualHistoryContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Modal,
-    SafeAreaView,
-    StyleSheet,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
-    IconButton,
-    Text,
-    useTheme
+  Divider,
+  IconButton,
+  Text,
+  useTheme,
 } from "react-native-paper";
+import {
+  BilingualHistoryProvider,
+  BilingualRecord,
+  useBilingualHistory,
+} from "../../src/context/BilingualHistoryContext";
 
-const DaySummaryItem = ({ date, count, onPress }: { date: string, count: number, onPress: () => void }) => {
-    const theme = useTheme();
-    return (
-        <TouchableOpacity 
-            style={[styles.dayItemContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]} 
-            onPress={onPress}
-        >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={[styles.calendarIcon, { backgroundColor: theme.colors.secondaryContainer }]}>
-                    <Ionicons name="calendar" size={20} color={theme.colors.onSecondaryContainer} />
-                </View>
-                <View style={{ marginLeft: 15 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.colors.onSurface }}>
-                        {date}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant }}>
-                        {count} {count === 1 ? 'Interaction' : 'Interactions'}
-                    </Text>
-                </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.onSurfaceVariant} />
-        </TouchableOpacity>
-    );
-};
-
-const ChatBubble = ({ 
-    item, 
-    onDelete, 
-    onToggleFavorite 
-}: { 
-    item: BilingualRecord, 
-    onDelete: (id: string) => void,
-    onToggleFavorite: (id: string, status: boolean) => void 
+const HistoryItem = ({
+  item,
+  onDelete,
+  onToggleFavorite,
+}: {
+  item: BilingualRecord;
+  onDelete: (id: string) => void;
+  onToggleFavorite: (id: string, currentStatus: boolean) => void;
 }) => {
-    const theme = useTheme();
-    const time = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const isSideA = item.speaker_side === 'A';
-    
-    const alignStyle = isSideA ? { alignSelf: 'flex-end' as const } : { alignSelf: 'flex-start' as const };
-    const bubbleColor = isSideA ? theme.colors.primaryContainer : theme.colors.surfaceVariant;
-    const textColor = isSideA ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant;
+  const theme = useTheme();
+  const formattedDate = new Date(item.created_at).toLocaleString();
+  const isA = item.speaker_side === "A";
 
-    return (
-        <View style={[styles.chatBubbleContainer, alignStyle]}>
-            <Text style={[styles.speakerLabel, { color: theme.colors.outline, textAlign: isSideA ? 'right' : 'left' }]}>
-                {isSideA ? `${item.target_lang.toUpperCase()}` : `${item.source_lang.toUpperCase()}`}
+  return (
+    <View
+      style={[
+        styles.itemRow,
+        { justifyContent: isA ? "flex-start" : "flex-end" },
+      ]}
+    >
+      <View
+        style={[
+          styles.itemContainer,
+          { backgroundColor: theme.colors.surfaceVariant },
+        ]}
+      >
+        <View style={styles.headerRow}>
+          <View
+            style={[
+              styles.langBadge,
+              { backgroundColor: theme.colors.secondaryContainer },
+            ]}
+          >
+            <Text
+              style={[
+                styles.langText,
+                { color: theme.colors.onSecondaryContainer },
+              ]}
+            >
+              {item.source_lang.toUpperCase()} →{" "}
+              {item.target_lang.toUpperCase()}
             </Text>
-
-            <View style={[styles.messageBubble, { backgroundColor: bubbleColor, borderBottomRightRadius: isSideA ? 4 : 16, borderTopLeftRadius: isSideA ? 16 : 4 }]}>
-            
-                <Text style={{ fontSize: 16, color: textColor, fontWeight: '400' }}>
-                    {item.original_text}
-                </Text>
-                <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.1)', marginVertical: 6 }} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 15, color: textColor, fontWeight: 'bold', flex: 1 }}>
-                        {item.translated_text}
-                    </Text>
-                </View>
-            
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
-                    <Text style={[styles.timestamp, { color: textColor, opacity: 0.6 }]}>{time}</Text>
-                    
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <TouchableOpacity onPress={() => onToggleFavorite(item.id, item.is_favorite)}>
-                             <Ionicons name={item.is_favorite ? "heart" : "heart-outline"} size={16} color={item.is_favorite ? theme.colors.error : textColor} style={{opacity: 0.7}} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => onDelete(item.id)}>
-                             <Ionicons name="trash-outline" size={16} color={textColor} style={{opacity: 0.7}} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-            </View>
+          </View>
+          <Text
+            style={{ fontSize: 12, color: theme.colors.onSurfaceVariant }}
+          >
+            {formattedDate}
+          </Text>
         </View>
-    );
+
+        <View style={styles.contentContainer}>
+          <Text
+            style={[
+              styles.originalText,
+              { color: theme.colors.onSurfaceVariant },
+            ]}
+          >
+            {item.original_text}
+          </Text>
+          <Ionicons
+            name="arrow-down"
+            size={16}
+            color={theme.colors.outline}
+            style={{ marginVertical: 4 }}
+          />
+          <Text
+            style={[styles.translatedText, { color: theme.colors.primary }]}
+          >
+            {item.translated_text}
+          </Text>
+        </View>
+
+        <Divider style={{ marginVertical: 8 }} />
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            onPress={() => onToggleFavorite(item.id, item.is_favorite)}
+            style={styles.actionButton}
+          >
+            <Ionicons
+              name={item.is_favorite ? "star" : "star-outline"}
+              size={22}
+              color={item.is_favorite ? "#FFD700" : theme.colors.onSurfaceVariant}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => onDelete(item.id)}
+            style={styles.actionButton}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={22}
+              color={theme.colors.error}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
 };
 
+const HistoryContent = () => {
+  const {
+    bilingualHistory,
+    isLoading,
+    refreshHistory,
+    deleteTranslation,
+    toggleFavorite,
+  } = useBilingualHistory();
+  const router = useRouter();
 
-const BilingualHistoryScreen = () => {
-    const { bilingualHistory, isLoading, error, refreshHistory, deleteConversation, setConversationFavorite } = useHistory();
-    const router = useRouter();
-    const theme = useTheme();
-    
-    const [modalVisible, setModalVisible] = useState(false);
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [selectedRecords, setSelectedRecords] = useState<BilingualRecord[]>([]);
+  useFocusEffect(
+    useCallback(() => {
+      refreshHistory();
+    }, [refreshHistory])
+  );
 
-    useFocusEffect(
-        useCallback(() => {
-            refreshHistory();
-        }, [refreshHistory])
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      "Delete",
+      "Do you want to delete this translation from the conversation history?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deleteTranslation(id) },
+      ]
     );
+  };
 
-    const groupedHistory = useMemo(() => {
-        const groups: { [key: string]: BilingualRecord[] } = {};
-        
-        bilingualHistory.forEach(item => {
-            const dateKey = new Date(item.created_at).toLocaleDateString();
-            if (!groups[dateKey]) {
-                groups[dateKey] = [];
-            }
-            groups[dateKey].push(item);
-        });
-        return Object.keys(groups)
-            .sort((a, b) => {
-                const timeA = new Date(groups[a][0].created_at).getTime();
-                const timeB = new Date(groups[b][0].created_at).getTime();
-                return timeB - timeA;
-            })
-            .map(date => ({
-                date,
-                data: groups[date].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) 
-            }));
-    }, [bilingualHistory]);
-    const handleDayPress = (date: string, records: BilingualRecord[]) => {
-        setSelectedDate(date);
-        setSelectedRecords(records);
-        setModalVisible(true);
-    };
-    const handleDelete = (id: string) => {
-        Alert.alert(
-            "Delete Confirmation",
-            "Are you sure you want to delete this translation?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        await deleteConversation(id);
-                        setSelectedRecords(prev => {
-                            const updated = prev.filter(item => item.id !== id);
-                            if (updated.length === 0) {
-                                setModalVisible(false);
-                            }
-                            return updated;
-                        });
-                    },
-                },
-            ]
-        );
-    }
+  return (
+    <View style={styles.mainContainer}>
+      <View style={styles.headerContainer}>
+        <IconButton
+          icon="arrow-left"
+          size={25}
+          onPress={() => router.push("/(tabs)/bilingual")}
+        />
+        <Text style={{ fontSize: 20, fontWeight: "bold" }}>
+          Conversation History
+        </Text>
+      </View>
 
-    return (
-        <View style={[styles.mainContainer, { backgroundColor: '#F2F2F7' }]}>
-            <View style={styles.headerContainer}>
-                <IconButton
-                    icon="arrow-left"
-                    size={25}
-                    onPress={() => router.back()}
-                />
-                <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>
-                    History
-                </Text>
+      {isLoading && bilingualHistory.length === 0 ? (
+        <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+      ) : (
+        <FlatList
+          data={bilingualHistory}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={({ item }) => (
+            <HistoryItem
+              item={item}
+              onDelete={handleDelete}
+              onToggleFavorite={toggleFavorite}
+            />
+          )}
+          ListEmptyComponent={
+            <View style={{ alignItems: "center", marginTop: 50 }}>
+              <Ionicons name="chatbubbles-outline" size={50} color="#ccc" />
+              <Text
+                style={{ textAlign: "center", marginTop: 10, color: "#999" }}
+              >
+                No conversation yet. Start speaking in the bilingual screen!
+              </Text>
             </View>
+          }
+          contentContainerStyle={{ paddingBottom: 80, paddingHorizontal: 8 }}
+          onRefresh={refreshHistory}
+          refreshing={isLoading}
+        />
+      )}
+    </View>
+  );
+};
 
-            {isLoading ? (
-                <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20 }} />
-            ) : error ? (
-                <View style={styles.errorContainer}>
-                    <Text style={{ color: theme.colors.error }}>Error: {error}</Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={groupedHistory}
-                    keyExtractor={(item) => item.date}
-                    renderItem={({ item }) => (
-                        <DaySummaryItem 
-                            date={item.date} 
-                            count={item.data.length} 
-                            onPress={() => handleDayPress(item.date, item.data)}
-                        />
-                    )}
-                    contentContainerStyle={{ padding: 10 }}
-                    ListEmptyComponent={
-                        <Text style={{textAlign: 'center', marginTop: 50, color: '#999'}}>No history found.</Text>
-                    }
-                />
-            )}
-
-            <Modal
-                animationType="slide"
-                presentationStyle="pageSheet"
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-                    <View style={styles.modalHeader}>
-                        <IconButton icon="close" onPress={() => setModalVisible(false)} />
-                        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{selectedDate}</Text>
-                        <IconButton icon="dots-horizontal" disabled /> 
-                    </View>
-                    
-                    <FlatList 
-                        data={selectedRecords}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                            <ChatBubble 
-                                item={item} 
-                                onDelete={handleDelete}
-                                onToggleFavorite={setConversationFavorite}
-                            />
-                        )}
-                        contentContainerStyle={{ padding: 15, paddingBottom: 50 }}
-                    />
-                </SafeAreaView>
-            </Modal>
-        </View>
-    );
-}
-
-export default function BilingualHistoryPage() {
-    return (
-        <BilingualHistoryProvider>
-            <BilingualHistoryScreen />
-        </BilingualHistoryProvider>
-    );
+export default function BilingualHistoryScreen() {
+  return <HistoryContent />;
 }
 
 const styles = StyleSheet.create({
-    mainContainer: {
-        flex: 1,
-    },
-    headerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingTop: 10,
-        paddingHorizontal: 5,
-        backgroundColor: '#fff',
-        paddingBottom: 10,
-        elevation: 2
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-    },
-    dayItemContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 10,
-        borderWidth: 1,
-        elevation: 1,
-    },
-    calendarIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    errorContainer: {
-        marginTop: 20,
-        alignItems: "center",
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingBottom: 5,
-    },
-    chatBubbleContainer: {
-        marginBottom: 15,
-        width: '85%',
-    },
-    messageBubble: {
-        padding: 12,
-        borderRadius: 16,
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-    },
-    sentBubble: {
-        alignSelf: 'flex-end',
-        borderBottomRightRadius: 4, 
-    },
-    receivedBubble: {
-        alignSelf: 'flex-start',
-        borderTopLeftRadius: 4,
-    },
-    langLabel: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        marginBottom: 2,
-        opacity: 0.7
-    },
-    timestamp: {
-        fontSize: 10,
-    },
-    speakerLabel: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        marginBottom: 4,
-        marginHorizontal: 5
-    },
+  mainContainer: {
+    flex: 1,
+    paddingTop: 10,
+    backgroundColor: "#fff",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  itemRow: {
+    flexDirection: "row",
+    marginVertical: 4,
+  },
+  itemContainer: {
+    borderRadius: 16,
+    marginBottom: 4,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+    maxWidth: "85%",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  langBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  langText: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  contentContainer: {
+    marginBottom: 5,
+  },
+  originalText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  translatedText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 2,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 15,
+  },
+  actionButton: {
+    padding: 4,
+  },
 });

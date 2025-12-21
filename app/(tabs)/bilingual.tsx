@@ -1,5 +1,5 @@
 import { styles as stylesA } from '@/constants/styles';
-import { useHistory } from '@/src/context/BilingualHistoryContext';
+import { useBilingualHistory } from '@/src/context/BilingualHistoryContext';
 import { useTranslation } from "@/src/context/TranslationContext";
 import { languagesData } from '@/src/types/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -83,7 +83,7 @@ export default function BilingualScreen() {
   const theme = useTheme();
   const [langA, setLangA] = useState<string>('en');
   const [langB, setLangB] = useState<string>('pt');
-  const { saveTranslation } = useHistory(); // Da 1ª versão
+  const { saveTranslation } = useBilingualHistory(); 
   const [textA, setTextA] = useState('');
   const [textB, setTextB] = useState('');
   const [listeningA, setListeningA] = useState(false);
@@ -95,23 +95,29 @@ export default function BilingualScreen() {
   // Speech Recognition Events (da 2ª versão)
   useSpeechRecognitionEvent("result", (event) => {
     if (!event.results || event.results.length === 0) return;
-    const transcript = event.results[0].transcript || "";
+  const transcript = event.results[0].transcript || "";
 
-    if (listeningA) {
-      setTextA(transcript);
-      handleTranslateFromA(transcript);
-    }
+  if (listeningA) {
+    setTextA(transcript);
+  }
 
-    if (listeningB) {
-      setTextB(transcript);
-      handleTranslateFromB(transcript);
-    }
-  });
+  if (listeningB) {
+    setTextB(transcript);
+  }
+});
 
   useSpeechRecognitionEvent("end", () => {
-    setListeningA(false);
-    setListeningB(false);
-  });
+    if (listeningA && textA.trim()) {
+    handleTranslateFromA(textA);
+  }
+
+  if (listeningB && textB.trim()) {
+    handleTranslateFromB(textB);
+  }
+
+  setListeningA(false);
+  setListeningB(false);
+});
 
   useSpeechRecognitionEvent("error", (event) => {
     console.log("STT error:", event.error, event.message);
