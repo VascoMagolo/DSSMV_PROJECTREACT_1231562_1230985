@@ -1,7 +1,7 @@
 import { BilingualHistoryProvider, BilingualRecord, useHistory } from "@/src/context/BilingualHistoryContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -106,11 +106,9 @@ const BilingualHistoryScreen = () => {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedRecords, setSelectedRecords] = useState<BilingualRecord[]>([]);
 
-    useFocusEffect(
-        useCallback(() => {
-            refreshHistory();
-        }, [refreshHistory])
-    );
+    useEffect(() => {
+        refreshHistory();
+    }, []);
 
     const groupedHistory = useMemo(() => {
         const groups: { [key: string]: BilingualRecord[] } = {};

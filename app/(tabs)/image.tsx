@@ -1,6 +1,7 @@
 import { styles as stylesA } from '@/constants/styles';
 import { ocrAPI } from '@/src/api/ocrAPI';
 import { translationAPI } from '@/src/api/translationAPI';
+import { useOCRHistory } from '@/src/context/OCRHistoryContext';
 import { useAuth } from "@/src/context/UserContext";
 import { languagesData } from '@/src/types/types';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
@@ -17,6 +18,7 @@ export default function ImageScreen() {
   const [image, setImage] = useState<string | null>(null);
   const [language, setLanguage] = useState<string>(user?.preferred_language || 'en');
   const [translatedText, setTranslatedText] = useState<string>('');
+  const { saveOCRRecord } = useOCRHistory();
   const handleImagePicked = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     if (permissionResult.granted === false) {
@@ -26,7 +28,7 @@ export default function ImageScreen() {
     let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 0.8, 
+      quality: 0.8,
     });
 
     if (!result.canceled) {
@@ -37,11 +39,21 @@ export default function ImageScreen() {
 
       try {
         const text = await ocrAPI.useOCR(result.assets[0].uri);
+        console.log("Image URI:", result.assets[0].uri);
+        console.log("Detected Text:", text);
         const translationResult = await translationAPI.detectAndTranslate(language, JSON.stringify(text));
         setExtractedText(text);
         setTranslatedText(translationResult.translatedText);
+        await saveOCRRecord(
+          result.assets[0].uri,
+          text,
+          translationResult.translatedText,
+          language,
+          translationResult.detectedLanguage
+        );
       } catch (e) {
-        setExtractedText("Error reading text.");
+        console.log("Error:", e);
+        setExtractedText("Error reading text." + e);
         setTranslatedText("Error translating text.");
       } finally {
         setLoading(false);
@@ -51,27 +63,27 @@ export default function ImageScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Image Reading (OCR)</Text>
-      
+
       {image && (
         <Image source={{ uri: image }} style={styles.previewImage} />
       )}
       <Dropdown
-          style={stylesA.dropdown}
-          placeholderStyle={stylesA.placeholderStyle}
-          selectedTextStyle={stylesA.selectedTextStyle}
-          data={languagesData}
-          maxHeight={300}
-          labelField="label"
-          valueField="value"
-          placeholder="Select Language"
-          value={language}
-          onChange={item => setLanguage(item.value)}
-          renderRightIcon={() => (
-            <Ionicons name="chevron-down" size={20} color={theme.colors.onSurface} />
-          )}
-        />
-      <Button 
-        mode="contained" 
+        style={stylesA.dropdown}
+        placeholderStyle={stylesA.placeholderStyle}
+        selectedTextStyle={stylesA.selectedTextStyle}
+        data={languagesData}
+        maxHeight={300}
+        labelField="label"
+        valueField="value"
+        placeholder="Select Language"
+        value={language}
+        onChange={item => setLanguage(item.value)}
+        renderRightIcon={() => (
+          <Ionicons name="chevron-down" size={20} color={theme.colors.onSurface} />
+        )}
+      />
+      <Button
+        mode="contained"
         onPress={handleImagePicked}
         loading={loading}
         disabled={loading}
@@ -80,23 +92,23 @@ export default function ImageScreen() {
         {loading ? 'Reading...' : 'Take a Picture'}
       </Button>
 
-        <View style={[styles.resultCard, { backgroundColor: theme.colors.surfaceVariant }]}>
-          <Text style={{fontWeight: 'bold', marginBottom: 5, color: theme.colors.onSurface}}>Detected Text:</Text>
-          <Text style={{fontSize: 16, color: theme.colors.onSurface}}>{extractedText}</Text>
-        </View>
-        <View style={[styles.resultCard, { backgroundColor: theme.colors.surfaceVariant }]}>
-          <Text style={{fontWeight: 'bold', marginBottom: 5, color: theme.colors.onSurface}}>Translated Text:</Text>
-          <Text style={{fontSize: 16, color: theme.colors.onSurface}}>{translatedText}</Text>
-        </View>
+      <View style={[styles.resultCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+        <Text style={{ fontWeight: 'bold', marginBottom: 5, color: theme.colors.onSurface }}>Detected Text:</Text>
+        <Text style={{ fontSize: 16, color: theme.colors.onSurface }}>{extractedText}</Text>
+      </View>
+      <View style={[styles.resultCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+        <Text style={{ fontWeight: 'bold', marginBottom: 5, color: theme.colors.onSurface }}>Translated Text:</Text>
+        <Text style={{ fontSize: 16, color: theme.colors.onSurface }}>{translatedText}</Text>
+      </View>
 
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flexGrow: 1, 
-    alignItems: 'center', 
+  container: {
+    flexGrow: 1,
+    alignItems: 'center',
     padding: 20,
     paddingTop: 60
   },
