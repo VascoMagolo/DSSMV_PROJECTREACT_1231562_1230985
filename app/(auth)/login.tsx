@@ -16,7 +16,7 @@ import { useAuth } from '../../src/context/UserContext';
 import { supabase } from '../../src/services/supabase';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useTheme } from 'react-native-paper';
-import { languagesData } from '@/constants/values';
+import { languagesData } from '@/src/types/types';
 
 export default function AuthScreen() {
   

@@ -1,0 +1,32 @@
+@startuml Deployment Diagram
+title Deployment Diagram - Translator App
+
+skinparam defaultFontName "Inter"
+skinparam nodeBackgroundColor #F8F8F8
+skinparam nodeBorderColor #000000
+skinparam arrowColor #333333
+
+node "User Mobile Device" as Device <<Android/iOS>> {
+    component "RTTC - Real Time Translation Client" as App <<React Native / Expo>>
+}
+
+cloud "Internet" {
+    
+    node "Supabase Cloud" as SupabaseNode {
+        database "PostgreSQL DB" as DB
+    }
+
+    node "RapidAPI Gateway" as RapidAPI {
+        component "Google Translate API" as TransAPI
+        component "OCR API" as OCRService
+    }
+}
+
+' Connections
+App --> SupabaseNode : HTTPS / REST\n(Data & Auth)
+App --> RapidAPI : HTTPS / REST\n(API Calls)
+
+DB -[hidden]- Auth
+TransAPI -[hidden]- OCRService
+
+@enduml

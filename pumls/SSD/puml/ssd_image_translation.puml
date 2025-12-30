@@ -1,0 +1,48 @@
+@startuml SSD: Image Translation
+title SSD: Image Translation (OCR -> Translate)
+
+skinparam defaultFontName "Inter"
+skinparam sequenceArrowThickness 1.5
+
+actor "User" as User
+
+box "UI Layer" #FAFAFA
+    participant "ImageScreen" as UI
+end box
+
+box "Logic & API" #EFEFEF
+    participant "ocrAPI" as OCR
+    participant "TranslationContext" as TransCtx
+    participant "TranslationAPI" as TransAPI
+end box
+
+User -> UI : Tap "Take Picture"
+UI -> UI : Open Camera -> Capture
+UI -> UI : setImage(uri)
+
+UI -> UI : setLoading(true)
+
+group Process Image (OCR)
+    UI -> OCR : useOCR(imageUri)
+    activate OCR
+    OCR --> UI : "Extracted Text..."
+    deactivate OCR
+    UI -> UI : setExtractedText("...")
+end
+
+group Translate Result
+    UI -> TransCtx : detectAndTranslate(extractedText, targetLang)
+    activate TransCtx
+    TransCtx -> TransAPI : detectAndTranslate(...)
+    activate TransAPI
+    TransAPI --> TransCtx : { translatedText: "...", ... }
+    deactivate TransAPI
+    TransCtx --> UI : Result Object
+    deactivate TransCtx
+    UI -> UI : setTranslatedText("...")
+end
+
+UI -> UI : setLoading(false)
+UI -> User : Show Original & Translated Text
+
+@enduml

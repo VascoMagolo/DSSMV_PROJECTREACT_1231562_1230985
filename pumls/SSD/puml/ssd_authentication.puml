@@ -1,0 +1,65 @@
+@startuml SSD: Authentication
+title SSD: Authentication Flow (Login & Register)
+
+skinparam defaultFontName "Inter"
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 10
+skinparam maxmessagesize 150
+
+actor "User" as User
+
+box "UI Layer" #FAFAFA
+    participant "LoginScreen" as UI
+end box
+
+box "State Management" #EFEFEF
+    participant "UserContext" as Ctx
+end box
+
+box "Infrastructure" #E0E0E0
+    participant "Supabase Auth" as Auth
+    participant "Supabase DB" as DB
+    participant "SecureStore" as Storage
+end box
+
+== Scenario: Login ==
+
+User -> UI : Enter email/pass & Click "Login"
+UI -> Ctx : signIn(email, password)
+activate Ctx
+
+Ctx -> Auth : signInWithPassword(email, pass)
+activate Auth
+Auth --> Ctx : Session / User Data
+deactivate Auth
+
+alt Success
+    Ctx -> Storage : saveSession(session)
+    Ctx -> Ctx : setUser(user)
+    Ctx --> UI : { error: null }
+    UI -> User : Navigate to Home (Tabs)
+else Failure
+    Ctx --> UI : { error: "Invalid login" }
+    UI -> User : Show Alert Error
+end
+deactivate Ctx
+
+== Scenario: Register ==
+
+User -> UI : Fill form & Click "Register"
+UI -> Ctx : signUp(email, pass, metadata)
+activate Ctx
+
+Ctx -> Auth : signUp(email, pass)
+activate Auth
+Auth -> DB : Create User Record
+DB --> Auth : Success
+Auth --> Ctx : New User Data
+deactivate Auth
+
+Ctx --> UI : { error: null }
+deactivate Ctx
+
+UI -> User : Show "Account Created" & Login
+
+@enduml

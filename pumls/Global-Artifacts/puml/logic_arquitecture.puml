@@ -1,0 +1,50 @@
+@startuml Logical Architecture
+title Logical Architecture - Layered View
+
+skinparam defaultFontName "Inter"
+skinparam componentStyle uml2
+skinparam packageBackgroundColor #F8F8F8
+
+package "Presentation Layer (UI)" {
+    [Screens (Pages)] as Screens
+    [Components (Widgets)] as Components
+    [Navigation (Expo Router)] as Nav
+}
+
+package "Application Layer (State & Logic)" {
+    [User Context] as UserCtx
+    [Translation Context] as TransCtx
+    [History Contexts] as HistCtx
+    [Phrases Context] as PhraseCtx
+}
+
+package "Infrastructure Layer (Data Access)" {
+    [Supabase Client] as Supabase
+    [Translation API Wrapper] as TransAPI
+    [OCR API Wrapper] as OCRAPI
+    [Secure Storage] as Storage
+}
+
+package "Domain Layer (Model)" {
+    [Types & Interfaces] as Models
+}
+
+' Relations
+Screens ..> Nav : uses
+Screens ..> Components : includes
+Screens ..> UserCtx : consumes
+Screens ..> TransCtx : consumes
+Screens ..> HistCtx : consumes
+Screens ..> PhraseCtx : consumes
+
+UserCtx ..> Supabase : auth/data
+UserCtx ..> Storage : session persistence
+TransCtx ..> TransAPI : fetch
+PhraseCtx ..> Supabase : fetch
+PhraseCtx ..> TransAPI : fetch
+HistCtx ..> Supabase : read/write
+
+Supabase ..> Models : returns
+TransAPI ..> Models : returns
+
+@enduml

@@ -1,0 +1,62 @@
+@startuml SSD: Voice Translation (React Native)
+title SSD: Voice Translation (Screen -> Context -> API)
+
+skinparam defaultFontName "Inter"
+skinparam sequenceArrowThickness 1.5
+skinparam roundcorner 10
+skinparam maxmessagesize 150
+
+actor "User" as User
+
+box "UI Layer (Screens)" #FAFAFA
+    participant "TranslationScreen" as Screen
+end box
+
+box "State Management (Context API)" #EFEFEF
+    participant "TranslationContext" as TransCtx
+    participant "HistoryContext" as HistCtx
+end box
+
+box "Services & External" #E0E0E0
+    participant "TranslationAPI" as API
+    participant "Expo Speech" as TTS
+    participant "Supabase" as DB
+end box
+
+== Flow: Detect & Translate ==
+
+User -> Screen : Inputs Text / Voice
+Screen -> TransCtx : performDetectionAndTranslation(text, targetLang)
+activate TransCtx
+
+TransCtx -> API : detectLanguage(text)
+API --> TransCtx : "pt"
+
+TransCtx -> API : useTranslation("pt", targetLang, text)
+API --> TransCtx : "Hello World"
+
+TransCtx --> Screen : Returns TranslationResult
+deactivate TransCtx
+
+Screen -> Screen : setTranslatedText("Hello World")
+
+== Flow: Save History (If User Logged In) ==
+
+opt User is Authenticated
+    Screen -> HistCtx : saveTranslation(original, translated, ...)
+    activate HistCtx
+    
+    HistCtx -> DB : insert into 'translations'
+    DB --> HistCtx : success
+    
+    HistCtx -> HistCtx : updateLocalState()
+    deactivate HistCtx
+end
+
+== Flow: Text-to-Speech ==
+
+User -> Screen : Press "Speaker" Icon
+Screen -> TTS : Speech.speak("Hello World")
+TTS -> User : Audio Output
+
+@enduml

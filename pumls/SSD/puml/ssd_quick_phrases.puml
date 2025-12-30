@@ -1,0 +1,67 @@
+@startuml SSD: Quick Phrases
+title SSD: Quick Phrases (Manage & Translate)
+
+skinparam defaultFontName "Inter"
+skinparam sequenceArrowThickness 1.5
+
+actor "User" as User
+
+box "UI Layer" #FAFAFA
+    participant "PhrasesScreen" as UI
+end box
+
+box "State Management" #EFEFEF
+    participant "PhrasesContext" as PhraseCtx
+    participant "TranslationContext" as TransCtx
+end box
+
+box "Infrastructure" #E0E0E0
+    participant "Supabase" as DB
+    participant "TranslationAPI" as API
+end box
+
+== Scenario: Load Phrases ==
+
+User -> UI : Open Screen (Select Language)
+UI -> PhraseCtx : fetchPhrases(language)
+activate PhraseCtx
+
+PhraseCtx -> DB : select * from generic_phrases + user_phrases
+activate DB
+DB --> PhraseCtx : List of Phrases
+deactivate DB
+
+PhraseCtx --> UI : Update State (userPhrases, genericPhrases)
+deactivate PhraseCtx
+UI -> User : Display List
+
+== Scenario: Translate a Phrase ==
+
+User -> UI : Tap on a Phrase
+UI -> TransCtx : performTranslation(text, targetLang)
+activate TransCtx
+TransCtx -> API : useTranslation(...)
+activate API
+API --> TransCtx : "Translated Text"
+deactivate API
+TransCtx --> UI : "Translated Text"
+deactivate TransCtx
+
+UI -> User : Show Translation Modal
+
+== Scenario: Add New Phrase ==
+
+User -> UI : Click "+", Enter Text & Save
+UI -> PhraseCtx : addPhrase({ text, category })
+activate PhraseCtx
+PhraseCtx -> API : detectLanguage(text)
+API --> PhraseCtx : "en"
+PhraseCtx -> DB : insert into user_phrases
+DB --> PhraseCtx : Success
+PhraseCtx -> PhraseCtx : fetchPhrases("en")
+PhraseCtx --> UI : Success
+deactivate PhraseCtx
+
+UI -> User : Close Modal & Refresh List
+
+@enduml

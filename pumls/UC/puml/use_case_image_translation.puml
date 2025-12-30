@@ -1,0 +1,33 @@
+@startuml Use Case - Image Translation
+title Use Case: Image (OCR) Translation
+
+left to right direction
+
+actor "User" as User
+actor "Camera / Gallery" as Phone
+actor "OCR API" as OCR
+actor "Translation API" as TransAPI
+
+rectangle "Image Screen" {
+    usecase "Take Photo" as UC_Photo
+    usecase "Pick from Gallery" as UC_Gallery
+    usecase "Extract Text" as UC_Extract
+    usecase "Translate Extracted Text" as UC_Translate
+    usecase "View Overlay/Result" as UC_Result
+}
+
+User --> UC_Photo
+User --> UC_Gallery
+
+UC_Photo ..> Phone : request permission/image
+UC_Gallery ..> Phone : request image
+
+UC_Photo --> UC_Extract
+UC_Gallery --> UC_Extract
+
+UC_Extract ..> OCR : send image
+UC_Extract --> UC_Translate
+UC_Translate ..> TransAPI : translate text
+UC_Translate --> UC_Result
+
+@enduml
