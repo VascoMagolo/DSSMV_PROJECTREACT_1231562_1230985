@@ -1,0 +1,27 @@
+@startuml Use Case - Authentication
+title Use Case: Authentication
+
+left to right direction
+
+actor "User" as User
+actor "Supabase (Auth)" as Supabase
+
+rectangle "Authentication System" {
+    usecase "Login with Email/Pass" as UC_Login
+    usecase "Register New Account" as UC_Register
+    usecase "Continue as Guest" as UC_Guest
+    usecase "Logout" as UC_Logout
+    usecase "Validate Input" as UC_Validate
+}
+
+User --> UC_Login
+User --> UC_Register
+User --> UC_Guest
+User --> UC_Logout
+
+UC_Login ..> Supabase : verify credentials
+UC_Register ..> Supabase : create user
+UC_Login ..> UC_Validate : <<include>>
+UC_Register ..> UC_Validate : <<include>>
+
+@enduml

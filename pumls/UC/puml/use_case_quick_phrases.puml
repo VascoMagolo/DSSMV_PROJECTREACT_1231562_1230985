@@ -1,0 +1,39 @@
+@startuml Use Case - Quick Phrases
+title Use Case: Quick Phrases Management
+
+left to right direction
+
+actor "User" as User
+actor "Supabase (DB)" as DB
+actor "Translation API" as API
+
+rectangle "Phrases Screen" {
+    usecase "Browse Phrases" as UC_Browse
+    usecase "Filter by Language" as UC_Filter
+    usecase "Translate Phrase" as UC_Translate
+    usecase "Add New Phrase" as UC_Add
+    usecase "Delete Phrase" as UC_Delete
+    usecase "Detect Language" as UC_Detect
+}
+
+User --> UC_Browse
+User --> UC_Filter
+User --> UC_Translate
+User --> UC_Add
+User --> UC_Delete
+
+UC_Browse ..> DB : fetch (generic + user)
+UC_Add ..> DB : insert
+UC_Delete ..> DB : remove
+
+UC_Add ..> UC_Detect : <<include>>
+UC_Detect ..> API : identify language
+
+UC_Translate ..> API : translate
+
+note right of UC_Delete
+  Only User-created phrases
+  can be deleted
+end note
+
+@enduml

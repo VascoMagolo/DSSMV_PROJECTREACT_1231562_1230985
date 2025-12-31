@@ -1,0 +1,27 @@
+@startuml Use Case - History Management
+title Use Case: History Management
+
+left to right direction
+
+actor "Registered User" as User
+actor "Supabase (DB)" as DB
+
+rectangle "History Screens" {
+    usecase "View Translation History" as UC_ViewTrans
+    usecase "View Bilingual History" as UC_ViewBi
+    usecase "Delete Record" as UC_Delete
+    usecase "Mark as Favorite" as UC_Fav
+    usecase "Clear All" as UC_Clear
+}
+
+User --> UC_ViewTrans
+User --> UC_ViewBi
+User --> UC_Delete
+User --> UC_Fav
+
+UC_ViewTrans ..> DB : select * from translations
+UC_ViewBi ..> DB : select * from bilingual_history
+UC_Delete ..> DB : delete row
+UC_Fav ..> DB : update is_favorite
+
+@enduml

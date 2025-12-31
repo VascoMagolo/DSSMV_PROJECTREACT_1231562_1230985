@@ -1,0 +1,36 @@
+@startuml Use Case - Voice Translation
+title Use Case: Voice & Text Translation
+
+left to right direction
+
+actor "User" as User
+actor "Translation API" as API
+actor "Expo Speech (TTS)" as TTS
+actor "Supabase (DB)" as DB
+
+rectangle "Translation Screen" {
+    usecase "Enter Text Manually" as UC_InputText
+    usecase "Speak to Translate (STT)" as UC_InputVoice
+    usecase "Select Languages" as UC_SelectLang
+    usecase "View Translation" as UC_View
+    usecase "Play Audio (TTS)" as UC_Play
+    usecase "Copy to Clipboard" as UC_Copy
+    usecase "Auto-Save to History" as UC_Save
+}
+
+User --> UC_InputText
+User --> UC_InputVoice
+User --> UC_SelectLang
+User --> UC_Play
+User --> UC_Copy
+
+UC_InputVoice ..> UC_View : leads to
+UC_InputText ..> UC_View : leads to
+
+UC_View ..> API : detect & translate
+UC_Play ..> TTS : speak text
+
+UC_View ..> UC_Save : <<include>> (if logged in)
+UC_Save ..> DB : insert record
+
+@enduml

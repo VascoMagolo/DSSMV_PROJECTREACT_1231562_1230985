@@ -8,6 +8,7 @@ import { MD3LightTheme, PaperProvider } from 'react-native-paper';
 import { PhrasesProvider } from '../src/context/PhrasesContext';
 import { TranslationHistoryProvider } from '../src/context/TranslationHistoryContext';
 import { useAuth, UserProvider } from '../src/context/UserContext';
+import { OCRHistoryProvider } from '@/src/context/OCRHistoryContext';
 
 const theme = {
   ...MD3LightTheme,
@@ -23,13 +24,13 @@ const InitialLayout = () => {
   const { user, isLoading, isGuest } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  
+
 
   useEffect(() => {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-  
+
     const isAuthenticated = user !== null || isGuest;
 
     if (!isAuthenticated && !inAuthGroup) {
@@ -56,10 +57,12 @@ export default function RootLayout() {
         <TranslationProvider>
           <TranslationHistoryProvider>
             <BilingualHistoryProvider>
-            <PhrasesProvider>
-            <InitialLayout />
-            <ModalPortal />
-            </PhrasesProvider>
+              <OCRHistoryProvider>
+                <PhrasesProvider>
+                  <InitialLayout />
+                  <ModalPortal />
+                </PhrasesProvider>
+              </OCRHistoryProvider>
             </BilingualHistoryProvider>
           </TranslationHistoryProvider>
         </TranslationProvider>

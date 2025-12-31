@@ -1,0 +1,143 @@
+@startuml Class Diagram - React Native Architecture
+title React Native App Architecture
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontName "Inter"
+skinparam packageBackgroundColor #F8F8F8
+
+package "app (Screens)" {
+    class TranslationScreen {
+        +handleTranslationClick()
+        +handleTTS()
+    }
+    class ImageScreen {
+        +handleImagePicked()
+    }
+    class BilingualScreen {
+        +handleSpeakA()
+        +handleSpeakB()
+        +handleSwap()
+    }
+    class PhrasesScreen {
+        +fetchPhrases()
+        +handleAddPhrase()
+    }
+    class LoginScreen {
+        +handleLogin()
+        +handleRegister()
+    }
+}
+
+package "src/context (State & Logic)" {
+    class UserContext {
+        +User user
+        +signIn(email, pass)
+        +signInAsGuest()
+        +signOut()
+    }
+
+    class TranslationContext {
+        +performTranslation()
+        +performDetectionAndTranslation()
+    }
+
+    class TranslationHistoryContext {
+        +TranslationRecord[] translationHistory
+        +saveTranslation()
+        +deleteTranslation()
+        +toggleFavorite()
+    }
+
+    class BilingualHistoryContext {
+        +BilingualRecord[] bilingualHistory
+        +saveTranslation()
+        +deleteConversation()
+    }
+    
+    class PhrasesContext {
+        +Phrase[] userPhrases
+        +Phrase[] genericPhrases
+        +addPhrase()
+        +deletePhrase()
+    }
+}
+
+package "src/api (Services)" {
+    class supabase {
+        +auth
+        +from(table)
+    }
+
+    class translationAPI {
+        +useTranslation()
+        +detectLanguage()
+        +detectAndTranslate()
+    }
+
+    class ocrAPI {
+        +useOCR(imageUri)
+    }
+}
+
+package "src/types (Domain Model)" {
+    class User {
+        +id: string
+        +email: string
+        +name: string
+        +preferred_language: string
+    }
+
+    class TranslationRecord {
+        +id: string
+        +original_text: string
+        +translated_text: string
+        +source_language: string
+        +target_language: string
+        +is_favorite: boolean
+    }
+    
+    class BilingualRecord {
+        +id: string
+        +speaker_side: 'A' | 'B'
+        +original_text: string
+        +translated_text: string
+    }
+
+    class Phrase {
+        +id: string
+        +text: string
+        +category: string
+        +language: string
+    }
+}
+
+' Relationships (Screens -> Contexts)
+TranslationScreen ..> TranslationContext
+TranslationScreen ..> TranslationHistoryContext
+TranslationScreen ..> UserContext
+
+ImageScreen ..> TranslationContext
+ImageScreen ..> UserContext
+
+BilingualScreen ..> TranslationContext
+BilingualScreen ..> BilingualHistoryContext
+
+PhrasesScreen ..> PhrasesContext
+PhrasesScreen ..> TranslationContext
+
+LoginScreen ..> UserContext
+
+' Relationships (Contexts -> APIs/Model)
+TranslationContext ..> translationAPI
+UserContext ..> supabase
+UserContext ..> User
+TranslationHistoryContext ..> supabase
+TranslationHistoryContext ..> TranslationRecord
+BilingualHistoryContext ..> supabase
+BilingualHistoryContext ..> BilingualRecord
+PhrasesContext ..> supabase
+PhrasesContext ..> Phrase
+
+ImageScreen ..> ocrAPI
+
+@enduml

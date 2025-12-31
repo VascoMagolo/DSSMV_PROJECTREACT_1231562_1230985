@@ -16,7 +16,6 @@ export const ocrAPI = {
                 body: formdata
             });
             if (!response.ok) {
-                const errorText = await response.text();
                 return `Erro API: ${response.status}`;
             }
 
