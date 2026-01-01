@@ -1,5 +1,4 @@
 import { Action } from '@/src/types/types';
-import { useFocusEffect } from 'expo-router';
 import React, { createContext, useCallback, useContext, useEffect, useReducer } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
@@ -98,7 +97,7 @@ export const OCRHistoryProvider = ({ children }: { children: React.ReactNode }) 
                     extracted_text: extractedText,
                     translated_text: translated_text,
                     target_language: targetLanguage,
-                    source_language: sourceLanguage, // later change to actual source language if needed
+                    source_language: sourceLanguage,
                 });
 
             if (error) throw error;
