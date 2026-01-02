@@ -80,60 +80,121 @@ export default function AccountScreen() {
     <ScrollView
       contentContainerStyle={[
         styles.container,
-        { backgroundColor: "#F5F7FA", paddingBottom: 60 },
+        { backgroundColor: theme.colors.background },
       ]}
     >
-      <View style={styles.header}>
-        <Avatar.Text
-          size={80}
-          label={isGuest ? "G" : getInitials(user?.username || "")}
-          style={{ backgroundColor: theme.colors.primary }}
-        />
-        <Text variant="headlineSmall" style={styles.username}>
-          {isGuest ? "Guest" : user?.username}
+      <View style={[styles.header, { backgroundColor: theme.colors.surfaceVariant }]}>
+        <View style={[styles.avatarContainer, { borderColor: theme.colors.surface }]}>
+          <Avatar.Text
+            size={90}
+            label={isGuest ? "G" : getInitials(user?.username || "")}
+            style={{ backgroundColor: theme.colors.primary }}
+            color={theme.colors.onPrimary}
+          />
+        </View>
+        <Text variant="headlineSmall" style={[styles.username, { color: theme.colors.onSurface }]}>
+          {isGuest ? "Guest User" : user?.username}
         </Text>
-        <Text variant="bodyMedium" style={styles.email}>
-          {isGuest ? "Guest Mode" : user?.email}
+        <Text variant="bodyMedium" style={[styles.email, { color: theme.colors.onSurfaceVariant }]}>
+          {isGuest ? "Sign in to save your history" : user?.email}
         </Text>
       </View>
 
-      <View style={styles.section}>
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
         <List.Section>
-          <List.Subheader>Account</List.Subheader>
+          <List.Subheader style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
+            Account Settings
+          </List.Subheader>
 
           <List.Item
             title="Edit Profile"
+            description="Change name & language"
             left={(props) => (
-              <List.Icon {...props} icon="account-edit-outline" />
+              <List.Icon {...props} icon="account-edit-outline" color={theme.colors.onSurfaceVariant} />
             )}
-            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={theme.colors.outline} />}
             onPress={() => setModalVisible(true)}
             disabled={isGuest}
+            titleStyle={isGuest && { color: theme.colors.outline }}
           />
 
-          <Divider />
+          <Divider style={{ marginVertical: 4, backgroundColor: theme.colors.surfaceVariant }} />
 
           <List.Item
-            title="Native Language"
+            title="Preferred Language"
             description={
               user?.preferred_language
-                ? user.preferred_language.toUpperCase()
-                : "ENGLISH"
+                ? languagesData.find(l => l.value === user.preferred_language)?.label || user.preferred_language.toUpperCase()
+                : "English"
             }
-            left={(props) => <List.Icon {...props} icon="translate" />}
+            left={(props) => <List.Icon {...props} icon="translate" color={theme.colors.onSurfaceVariant} />}
             disabled={isGuest}
+            titleStyle={isGuest && { color: theme.colors.outline }}
           />
         </List.Section>
       </View>
+
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <List.Section>
+          <List.Subheader style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
+            Activity History
+          </List.Subheader>
+          
+          <List.Item
+            title="Image Translations"
+            left={(props) => <List.Icon {...props} icon="image-text" color={theme.colors.onSurfaceVariant} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={theme.colors.outline} />}
+            onPress={() => router.push('/history/ocr')}
+            disabled={isGuest}
+            titleStyle={isGuest && { color: theme.colors.outline }}
+          />
+          
+          <Divider style={{ marginLeft: 56, backgroundColor: theme.colors.surfaceVariant }} />
+          
+          <List.Item
+            title="Conversation History"
+            left={(props) => <List.Icon {...props} icon="chat-processing-outline" color={theme.colors.onSurfaceVariant} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={theme.colors.outline} />}
+            onPress={() => router.push('/history/bilingual')}
+            disabled={isGuest}
+            titleStyle={isGuest && { color: theme.colors.outline }}
+          />
+          
+          <Divider style={{ marginLeft: 56, backgroundColor: theme.colors.surfaceVariant }} />
+          
+          <List.Item
+            title="Voice Translations"
+            left={(props) => <List.Icon {...props} icon="microphone-outline" color={theme.colors.onSurfaceVariant} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={theme.colors.outline} />}
+            onPress={() => router.push('/history/translation')}
+            disabled={isGuest}
+            titleStyle={isGuest && { color: theme.colors.outline }}
+          />
+        </List.Section>
+      </View>
+
+      <View style={styles.logoutContainer}>
+        <Button
+          mode="outlined"
+          onPress={handleLogout}
+          textColor={theme.colors.error}
+          style={{ borderColor: theme.colors.error, borderRadius: 12 }}
+          contentStyle={{ paddingVertical: 6 }}
+          icon="logout"
+        >
+          Log Out
+        </Button>
+      </View>
+
       <Portal>
         <Modal
           visible={modalVisible}
           onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={styles.modalContainer}
+          contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.surface }]}
         >
           <Text
             variant="headlineSmall"
-            style={{ marginBottom: 20, textAlign: "center" }}
+            style={{ marginBottom: 20, textAlign: "center", fontWeight: 'bold', color: theme.colors.primary }}
           >
             Edit Profile
           </Text>
@@ -143,17 +204,23 @@ export default function AccountScreen() {
             value={newName}
             onChangeText={setNewName}
             mode="outlined"
-            style={{ marginBottom: 20 }}
+            style={{ marginBottom: 20, backgroundColor: theme.colors.surface }}
+            outlineColor={theme.colors.outline}
+            activeOutlineColor={theme.colors.primary}
           />
+          
+          <Text variant="labelLarge" style={{ marginBottom: 5, color: theme.colors.onSurfaceVariant }}>
+            Native Language
+          </Text>
           <Dropdown
-            style={[stylesA.dropdown]}
+            style={[stylesA.dropdown, { borderColor: theme.colors.outline, borderWidth: 1, borderRadius: 4 }]}
             placeholderStyle={stylesA.placeholderStyle}
-            selectedTextStyle={stylesA.selectedTextStyle}
+            selectedTextStyle={[stylesA.selectedTextStyle, { color: theme.colors.onSurface }]}
             data={languagesData}
             maxHeight={300}
             labelField="label"
             valueField="value"
-            placeholder="To"
+            placeholder="Select language"
             value={newLanguage}
             onChange={(item) => setNewLanguage(item.value)}
             renderRightIcon={() => (
@@ -164,11 +231,13 @@ export default function AccountScreen() {
               />
             )}
           />
+
           <View style={styles.modalButtons}>
             <Button
               mode="text"
               onPress={() => setModalVisible(false)}
               style={{ marginRight: 10 }}
+              textColor={theme.colors.onSurfaceVariant}
             >
               Cancel
             </Button>
@@ -177,50 +246,13 @@ export default function AccountScreen() {
               onPress={handleUpdateProfile}
               loading={loading}
               disabled={loading}
+              style={{ borderRadius: 8 }}
             >
-              Save
+              Save Changes
             </Button>
           </View>
         </Modal>
       </Portal>
-
-      <View style={styles.section}>
-        <List.Section>
-          <List.Subheader>History</List.Subheader>
-          <List.Item
-            title="Image Translation History"
-            left={(props) => <List.Icon {...props} icon="image" />}
-            onPress={() => router.push('/history/ocr')}
-            disabled={isGuest}
-          />
-          <Divider />
-          <List.Item
-            title="Conversation History"
-            left={(props) => <List.Icon {...props} icon="account-voice" />}
-            onPress={() => router.push('/history/bilingual')}
-            disabled={isGuest}
-          />
-          <Divider />
-          <List.Item
-            title="Voice History"
-            left={(props) => <List.Icon {...props} icon="microphone" />}
-            onPress={() => router.push('/history/translation')}
-            disabled={isGuest}
-          />
-        </List.Section>
-      </View>
-
-      <View style={styles.logoutContainer}>
-        <Button
-          mode="outlined"
-          onPress={handleLogout}
-          textColor={theme.colors.error}
-          style={{ borderColor: theme.colors.error }}
-          icon="logout"
-        >
-          Logout
-        </Button>
-      </View>
     </ScrollView>
   );
 }
@@ -228,50 +260,60 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
   header: {
     alignItems: "center",
-    paddingVertical: 40,
-    backgroundColor: "#FFF",
+    paddingTop: 60,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     marginBottom: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  avatarContainer: {
+    borderWidth: 4,
+    borderRadius: 50,
+    padding: 2,
+    marginBottom: 10,
+  },
+  username: {
+    marginTop: 8,
+    fontWeight: "bold",
+  },
+  email: {
+    marginTop: 4,
+    opacity: 0.8,
+  },
+  section: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  username: {
-    marginTop: 15,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  email: {
-    color: "#666",
-    marginTop: 5,
-  },
-  section: {
-    backgroundColor: "#FFF",
-    marginHorizontal: 15,
-    marginBottom: 20,
-    borderRadius: 15,
-    overflow: "hidden",
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: "hidden", 
   },
   logoutContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginTop: 10,
+    marginBottom: 20,
   },
   modalContainer: {
-    backgroundColor: "white",
-    padding: 20,
+    padding: 24,
     margin: 20,
-    borderRadius: 15,
+    borderRadius: 20,
+    elevation: 5,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 10,
+    marginTop: 25,
   },
 });

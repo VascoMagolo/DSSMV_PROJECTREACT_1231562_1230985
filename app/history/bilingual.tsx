@@ -1,7 +1,7 @@
 import { BilingualHistoryProvider, BilingualRecord, useHistory } from "@/src/context/BilingualHistoryContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -10,87 +10,100 @@ import {
     SafeAreaView,
     StyleSheet,
     TouchableOpacity,
-    View
+    View,
+    StatusBar
 } from "react-native";
 import {
     IconButton,
     Text,
-    useTheme
+    useTheme,
+    Surface
 } from "react-native-paper";
 
 const DaySummaryItem = ({ date, count, onPress }: { date: string, count: number, onPress: () => void }) => {
     const theme = useTheme();
     return (
-        <TouchableOpacity 
-            style={[styles.dayItemContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]} 
+        <TouchableOpacity
+            style={[styles.dayItemContainer, { backgroundColor: theme.colors.surface }]}
             onPress={onPress}
+            activeOpacity={0.7}
         >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={[styles.calendarIcon, { backgroundColor: theme.colors.secondaryContainer }]}>
-                    <Ionicons name="calendar" size={20} color={theme.colors.onSecondaryContainer} />
+            <View style={styles.dayRow}>
+                <View style={[styles.calendarIcon, { backgroundColor: theme.colors.primaryContainer }]}>
+                    <Ionicons name="calendar-outline" size={22} color={theme.colors.onPrimaryContainer} />
                 </View>
-                <View style={{ marginLeft: 15 }}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.colors.onSurface }}>
+                <View style={styles.dayInfo}>
+                    <Text style={[styles.dayDate, { color: theme.colors.onSurface }]}>
                         {date}
                     </Text>
-                    <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant }}>
-                        {count} {count === 1 ? 'Interaction' : 'Interactions'}
+                    <Text style={[styles.dayCount, { color: theme.colors.outline }]}>
+                        {count} {count === 1 ? 'Conversation' : 'Conversations'}
                     </Text>
                 </View>
+                <View style={[styles.arrowContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
+                    <Ionicons name="chevron-forward" size={18} color={theme.colors.onSurfaceVariant} />
+                </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.onSurfaceVariant} />
         </TouchableOpacity>
     );
 };
 
-const ChatBubble = ({ 
-    item, 
-    onDelete, 
-    onToggleFavorite 
-}: { 
-    item: BilingualRecord, 
+const ChatBubble = ({
+    item,
+    onDelete,
+    onToggleFavorite
+}: {
+    item: BilingualRecord,
     onDelete: (id: string) => void,
-    onToggleFavorite: (id: string, status: boolean) => void 
+    onToggleFavorite: (id: string, status: boolean) => void
 }) => {
     const theme = useTheme();
     const time = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const isSideA = item.speaker_side === 'A';
-    
     const alignStyle = isSideA ? { alignSelf: 'flex-end' as const } : { alignSelf: 'flex-start' as const };
-    const bubbleColor = isSideA ? theme.colors.primaryContainer : theme.colors.surfaceVariant;
-    const textColor = isSideA ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant;
+    const bubbleColor = isSideA ? theme.colors.primary : theme.colors.surfaceVariant;
+    const textColor = isSideA ? theme.colors.onPrimary : theme.colors.onSurfaceVariant;
+    const subTextColor = isSideA ? 'rgba(255,255,255,0.7)' : theme.colors.outline;
 
     return (
         <View style={[styles.chatBubbleContainer, alignStyle]}>
             <Text style={[styles.speakerLabel, { color: theme.colors.outline, textAlign: isSideA ? 'right' : 'left' }]}>
-                {isSideA ? `${item.target_lang.toUpperCase()}` : `${item.source_lang.toUpperCase()}`}
+                {isSideA ? `Speaker A (${item.source_lang.toUpperCase()})` : `Speaker B (${item.source_lang.toUpperCase()})`}
             </Text>
 
-            <View style={[styles.messageBubble, { backgroundColor: bubbleColor, borderBottomRightRadius: isSideA ? 4 : 16, borderTopLeftRadius: isSideA ? 16 : 4 }]}>
-            
-                <Text style={{ fontSize: 16, color: textColor, fontWeight: '400' }}>
+            <View style={[
+                styles.messageBubble, 
+                { 
+                    backgroundColor: bubbleColor,
+                    borderBottomRightRadius: isSideA ? 2 : 18,
+                    borderBottomLeftRadius: isSideA ? 18 : 2
+                }
+            ]}>
+                
+                <Text style={{ fontSize: 16, color: textColor, marginBottom: 4 }}>
                     {item.original_text}
                 </Text>
-                <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.1)', marginVertical: 6 }} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 15, color: textColor, fontWeight: 'bold', flex: 1 }}>
+            
+                <View style={{ height: 1, backgroundColor: isSideA ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)', marginVertical: 6 }} />
+            
+                <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+                    <Ionicons name="language" size={14} color={subTextColor} />
+                    <Text style={{ fontSize: 15, color: textColor, fontWeight: '600', flex: 1 }}>
                         {item.translated_text}
                     </Text>
                 </View>
-            
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
-                    <Text style={[styles.timestamp, { color: textColor, opacity: 0.6 }]}>{time}</Text>
+                <View style={styles.bubbleFooter}>
+                    <Text style={{ fontSize: 10, color: subTextColor }}>{time}</Text>
                     
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                        <TouchableOpacity onPress={() => onToggleFavorite(item.id, item.is_favorite)}>
-                             <Ionicons name={item.is_favorite ? "heart" : "heart-outline"} size={16} color={item.is_favorite ? theme.colors.error : textColor} style={{opacity: 0.7}} />
+                    <View style={styles.bubbleActions}>
+                        <TouchableOpacity onPress={() => onToggleFavorite(item.id, item.is_favorite)} hitSlop={{top: 10, bottom: 10, left: 10, right: 5}}>
+                             <Ionicons name={item.is_favorite ? "heart" : "heart-outline"} size={16} color={item.is_favorite && !isSideA ? theme.colors.error : (isSideA ? 'white' : theme.colors.onSurfaceVariant)} />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => onDelete(item.id)}>
-                             <Ionicons name="trash-outline" size={16} color={textColor} style={{opacity: 0.7}} />
+                        <TouchableOpacity onPress={() => onDelete(item.id)} hitSlop={{top: 10, bottom: 10, left: 5, right: 10}}>
+                             <Ionicons name="trash-outline" size={16} color={subTextColor} />
                         </TouchableOpacity>
                     </View>
                 </View>
-
             </View>
         </View>
     );
@@ -101,7 +114,7 @@ const BilingualHistoryScreen = () => {
     const { bilingualHistory, isLoading, error, refreshHistory, deleteConversation, setConversationFavorite } = useHistory();
     const router = useRouter();
     const theme = useTheme();
-    
+
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedRecords, setSelectedRecords] = useState<BilingualRecord[]>([]);
@@ -112,14 +125,19 @@ const BilingualHistoryScreen = () => {
 
     const groupedHistory = useMemo(() => {
         const groups: { [key: string]: BilingualRecord[] } = {};
-        
+
         bilingualHistory.forEach(item => {
-            const dateKey = new Date(item.created_at).toLocaleDateString();
+            const dateKey = new Date(item.created_at).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
             if (!groups[dateKey]) {
                 groups[dateKey] = [];
             }
             groups[dateKey].push(item);
         });
+        
         return Object.keys(groups)
             .sort((a, b) => {
                 const timeA = new Date(groups[a][0].created_at).getTime();
@@ -128,18 +146,20 @@ const BilingualHistoryScreen = () => {
             })
             .map(date => ({
                 date,
-                data: groups[date].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) 
+                data: groups[date].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
             }));
     }, [bilingualHistory]);
+
     const handleDayPress = (date: string, records: BilingualRecord[]) => {
         setSelectedDate(date);
         setSelectedRecords(records);
         setModalVisible(true);
     };
+
     const handleDelete = (id: string) => {
         Alert.alert(
-            "Delete Confirmation",
-            "Are you sure you want to delete this translation?",
+            "Delete Message",
+            "Are you sure you want to remove this message?",
             [
                 { text: "Cancel", style: "cancel" },
                 {
@@ -149,9 +169,7 @@ const BilingualHistoryScreen = () => {
                         await deleteConversation(id);
                         setSelectedRecords(prev => {
                             const updated = prev.filter(item => item.id !== id);
-                            if (updated.length === 0) {
-                                setModalVisible(false);
-                            }
+                            if (updated.length === 0) setModalVisible(false);
                             return updated;
                         });
                     },
@@ -161,38 +179,50 @@ const BilingualHistoryScreen = () => {
     }
 
     return (
-        <View style={[styles.mainContainer, { backgroundColor: '#F2F2F7' }]}>
-            <View style={styles.headerContainer}>
-                <IconButton
-                    icon="arrow-left"
-                    size={25}
-                    onPress={() => router.back()}
-                />
-                <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>
-                    History
-                </Text>
-            </View>
+        <View style={[styles.mainContainer, { backgroundColor: theme.colors.background }]}>
+            <SafeAreaView>
+                <View style={styles.headerContainer}>
+                    <IconButton
+                        icon="arrow-left"
+                        size={24}
+                        onPress={() => router.push('/account')}
+                        iconColor={theme.colors.onSurface}
+                    />
+                    <Text variant="titleLarge" style={{ fontWeight: "bold", color: theme.colors.onSurface }}>
+                        Conversation History
+                    </Text>
+                    <View style={{ width: 40 }} />
+                </View>
+            </SafeAreaView>
 
             {isLoading ? (
-                <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20 }} />
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
             ) : error ? (
-                <View style={styles.errorContainer}>
-                    <Text style={{ color: theme.colors.error }}>Error: {error}</Text>
+                <View style={styles.centerContainer}>
+                    <Ionicons name="alert-circle-outline" size={48} color={theme.colors.error} />
+                    <Text style={{ color: theme.colors.error, marginTop: 10 }}>{error}</Text>
                 </View>
             ) : (
                 <FlatList
                     data={groupedHistory}
                     keyExtractor={(item) => item.date}
                     renderItem={({ item }) => (
-                        <DaySummaryItem 
-                            date={item.date} 
-                            count={item.data.length} 
+                        <DaySummaryItem
+                            date={item.date}
+                            count={item.data.length}
                             onPress={() => handleDayPress(item.date, item.data)}
                         />
                     )}
-                    contentContainerStyle={{ padding: 10 }}
+                    contentContainerStyle={{ padding: 16 }}
                     ListEmptyComponent={
-                        <Text style={{textAlign: 'center', marginTop: 50, color: '#999'}}>No history found.</Text>
+                        <View style={styles.emptyContainer}>
+                            <Ionicons name="chatbubbles-outline" size={64} color={theme.colors.outlineVariant} />
+                            <Text style={{ textAlign: 'center', marginTop: 16, color: theme.colors.outline }}>
+                                No conversations yet. Start talking!
+                            </Text>
+                        </View>
                     }
                 />
             )}
@@ -203,26 +233,26 @@ const BilingualHistoryScreen = () => {
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-                    <View style={styles.modalHeader}>
+                <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+                    <View style={[styles.modalHeader, { borderBottomColor: theme.colors.outlineVariant }]}>
                         <IconButton icon="close" onPress={() => setModalVisible(false)} />
-                        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{selectedDate}</Text>
-                        <IconButton icon="dots-horizontal" disabled /> 
+                        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{selectedDate}</Text>
+                        <IconButton icon="dots-horizontal" disabled style={{opacity: 0}} />
                     </View>
-                    
-                    <FlatList 
+
+                    <FlatList
                         data={selectedRecords}
                         keyExtractor={(item) => item.id}
                         renderItem={({ item }) => (
-                            <ChatBubble 
-                                item={item} 
+                            <ChatBubble
+                                item={item}
                                 onDelete={handleDelete}
                                 onToggleFavorite={setConversationFavorite}
                             />
                         )}
-                        contentContainerStyle={{ padding: 15, paddingBottom: 50 }}
+                        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
                     />
-                </SafeAreaView>
+                </View>
             </Modal>
         </View>
     );
@@ -239,83 +269,101 @@ export default function BilingualHistoryPage() {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
+        
     },
     headerContainer: {
         flexDirection: "row",
         alignItems: "center",
-        paddingTop: 10,
-        paddingHorizontal: 5,
-        backgroundColor: '#fff',
-        paddingBottom: 10,
-        elevation: 2
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+        paddingVertical: 30,
     },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    emptyContainer: {
+        alignItems: "center",
+        marginTop: 100,
+        opacity: 0.8,
     },
     dayItemContainer: {
+        borderRadius: 16,
+        marginBottom: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    dayRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         padding: 16,
-        borderRadius: 12,
-        marginBottom: 10,
-        borderWidth: 1,
-        elevation: 1,
     },
     calendarIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    errorContainer: {
-        marginTop: 20,
-        alignItems: "center",
+    dayInfo: {
+        marginLeft: 16,
+        flex: 1,
+    },
+    dayDate: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    dayCount: {
+        fontSize: 13,
+    },
+    arrowContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingBottom: 5,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
     },
     chatBubbleContainer: {
-        marginBottom: 15,
+        marginBottom: 20,
         width: '85%',
     },
-    messageBubble: {
-        padding: 12,
-        borderRadius: 16,
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-    },
-    sentBubble: {
-        alignSelf: 'flex-end',
-        borderBottomRightRadius: 4, 
-    },
-    receivedBubble: {
-        alignSelf: 'flex-start',
-        borderTopLeftRadius: 4,
-    },
-    langLabel: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        marginBottom: 2,
-        opacity: 0.7
-    },
-    timestamp: {
-        fontSize: 10,
-    },
     speakerLabel: {
-        fontSize: 10,
-        fontWeight: 'bold',
+        fontSize: 11,
+        fontWeight: '600',
         marginBottom: 4,
-        marginHorizontal: 5
+        marginHorizontal: 8,
+        opacity: 0.8
     },
+    messageBubble: {
+        padding: 14,
+        borderRadius: 18,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 3,
+        elevation: 1,
+    },
+    bubbleFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    bubbleActions: {
+        flexDirection: 'row',
+        gap: 12,
+    }
 });
