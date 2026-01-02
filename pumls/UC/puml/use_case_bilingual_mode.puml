@@ -1,0 +1,30 @@
+@startuml Use Case - Bilingual Mode
+title Use Case: Bilingual Conversation
+
+left to right direction
+
+actor "User A" as UserA
+actor "User B" as UserB
+actor "Translation API" as API
+actor "Supabase (DB)" as DB
+
+rectangle "Bilingual Screen" {
+    usecase "Speak Side A" as UC_SpeakA
+    usecase "Speak Side B" as UC_SpeakB
+    usecase "Swap Languages" as UC_Swap
+    usecase "Auto-Save Conversation" as UC_Save
+}
+
+UserA --> UC_SpeakA
+UserB --> UC_SpeakB
+UserA --> UC_Swap
+
+UC_SpeakA ..> API : translate A -> B
+UC_SpeakB ..> API : translate B -> A
+
+UC_SpeakA ..> UC_Save : <<include>>
+UC_SpeakB ..> UC_Save : <<include>>
+
+UC_Save ..> DB : save conversation turn
+
+@enduml

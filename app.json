@@ -8,7 +8,7 @@
     "scheme": "rttc",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.francisco-silva05.RTTC",
@@ -18,7 +18,7 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-    
+
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -34,12 +34,12 @@
       ],
       "package": "com.francisco_silva05.RTTC"
     },
-    
+
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    
+
     "plugins": [
       "expo-router",
       [
@@ -67,16 +67,19 @@
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone.",
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to use speech recognition.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
-    
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-    
+
     "extra": {
       "router": {
         "origin": false

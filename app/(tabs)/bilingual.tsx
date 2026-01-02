@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
     justifyContent: 'space-between',
-    paddingBottom: 100,
+    paddingBottom: 50,
   },
   card: {
     flex: 1,

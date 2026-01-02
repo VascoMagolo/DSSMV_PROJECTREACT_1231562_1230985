@@ -11,12 +11,14 @@ import {
     View
 } from "react-native";
 import {
-    Divider,
     IconButton,
     Text,
-    useTheme
+    useTheme,
+    Surface
 } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { OCRHistoryProvider, OCRRecord, useOCRHistory } from "../../src/context/OCRHistoryContext";
+
 const HistoryItem = ({
     item,
     onDelete,
@@ -25,87 +27,101 @@ const HistoryItem = ({
     onDelete: (id: string) => void;
 }) => {
     const theme = useTheme();
-    const formattedDate = new Date(item.timestamp).toLocaleDateString();
+    const formattedDate = new Date(item.timestamp).toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
 
     return (
-        <View
-            style={[
-                styles.itemContainer,
-                { backgroundColor: theme.colors.surfaceVariant },
-            ]}
-        >
-            <View style={styles.headerRow}>
-                <View style={[styles.langBadge, { backgroundColor: theme.colors.secondaryContainer }]}>
-                    <Text style={[styles.langText, { color: theme.colors.onSecondaryContainer }]}>
-                        {item.source_language.toUpperCase()} → {item.target_language.toUpperCase()}
+        <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={2}>
+            <View style={styles.cardHeader}>
+                <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+                    <Ionicons name="calendar-outline" size={14} color={theme.colors.outline} />
+                    <Text style={{ fontSize: 12, color: theme.colors.outline, fontWeight: '600' }}>
+                        {formattedDate}
                     </Text>
                 </View>
-                <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant }}>
-                    {formattedDate}
-                </Text>
-            </View>
-            <View style={styles.contentContainer}>
-                <View style={{ height: 200, marginBottom: 10 }}>
-                    <Image
-                        style={styles.image}
-                        source={item.image_url}
-                        placeholder={{ uri: 'https://picsum.photos/200/300' }}
-                        contentFit="cover"
-                        transition={1000}
-                    />
-                </View>
-
-                <Text style={[styles.originalText, { color: theme.colors.onSurfaceVariant }]}>
-                    {item.extracted_text}
-                </Text>
-                <Ionicons name="arrow-down" size={16} color={theme.colors.outline} style={{ marginVertical: 4 }} />
-                <Text style={[styles.translatedText, { color: theme.colors.primary }]}>
-                    {item.translated_text}
-                </Text>
-            </View>
-
-            <Divider style={{ marginVertical: 8 }} />
-            <View style={styles.actionsRow}>
-                <TouchableOpacity
-                    onPress={() => onDelete(item.id)}
-                    style={styles.actionButton}
-                >
-                    <Ionicons name="trash-outline" size={22} color={theme.colors.error} />
+                <TouchableOpacity onPress={() => onDelete(item.id)} hitSlop={10}>
+                    <Ionicons name="trash-outline" size={18} color={theme.colors.error} style={{ opacity: 0.8 }} />
                 </TouchableOpacity>
             </View>
-        </View>
+
+            <View style={styles.imageContainer}>
+                <Image
+                    style={styles.image}
+                    source={item.image_url}
+                    placeholder={{ uri: 'https://picsum.photos/200/300' }}
+                    contentFit="cover"
+                    transition={500}
+                />
+                <View style={[styles.langBadge, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                    <Text style={[styles.langText, { color: '#FFF' }]}>
+                        {item.source_language.toUpperCase()} <Ionicons name="arrow-forward" size={10} /> {item.target_language.toUpperCase()}
+                    </Text>
+                </View>
+            </View>
+
+            <View style={styles.contentContainer}>
+            
+                <View style={styles.textBlock}>
+                    <Text style={[styles.label, { color: theme.colors.primary }]}>DETECTED</Text>
+                    <Text style={[styles.originalText, { color: theme.colors.onSurfaceVariant }]} numberOfLines={3}>
+                        {item.extracted_text}
+                    </Text>
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: theme.colors.outlineVariant }]} />
+                <View style={styles.textBlock}>
+                    <Text style={[styles.label, { color: theme.colors.secondary }]}>TRANSLATION</Text>
+                    <Text style={[styles.translatedText, { color: theme.colors.onSurface }]} numberOfLines={10}>
+                        {item.translated_text}
+                    </Text>
+                </View>
+            </View>
+        </Surface>
     );
 };
 
 const HistoryContent = () => {
     const { ocrHistory, isLoading, fetchOCRHistory, deleteOCRRecord } = useOCRHistory();
     const theme = useTheme();
-    const router = useRouter()
+    const router = useRouter();
+    
     useFocusEffect(
         useCallback(() => {
             fetchOCRHistory();
         }, [])
     );
+
     const handleDelete = (id: string) => {
-        Alert.alert("Delete", "Do you want to delete this translation from the history?", [
+        Alert.alert("Delete Record", "Are you sure you want to remove this scan?", [
             { text: "Cancel", style: "cancel" },
             { text: "Delete", style: "destructive", onPress: () => deleteOCRRecord(id) },
         ]);
     };
 
     return (
-        <View style={styles.mainContainer}>
-            <View style={styles.headerContainer}>
-                <IconButton
-                    icon="arrow-left"
-                    size={25}
-                    onPress={() => router.push('/account')}
-                />
-                <Text style={{ fontSize: 20, fontWeight: "bold" }}>Translation History</Text>
-            </View>
+        <View style={[styles.mainContainer, { backgroundColor: theme.colors.background }]}>
+            <SafeAreaView edges={['top']} style={{backgroundColor: theme.colors.background}}>
+                <View style={styles.headerContainer}>
+                    <IconButton
+                        icon="arrow-left"
+                        size={24}
+                        onPress={() => router.push('/account')}
+                        iconColor={theme.colors.onSurface}
+                    />
+                    <Text variant="titleLarge" style={{ fontWeight: "bold", color: theme.colors.onSurface }}>
+                        OCR History
+                    </Text>
+                    <View style={{ width: 48 }} /> 
+                </View>
+            </SafeAreaView>
 
             {isLoading && ocrHistory.length === 0 ? (
-                <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
             ) : (
                 <FlatList
                     data={ocrHistory}
@@ -117,22 +133,24 @@ const HistoryContent = () => {
                         />
                     )}
                     ListEmptyComponent={
-                        <View style={{ alignItems: 'center', marginTop: 50 }}>
-                            <Ionicons name="time-outline" size={50} color="#ccc" />
-                            <Text style={{ textAlign: "center", marginTop: 10, color: "#999" }}>
-                                No history yet. Start translating!
+                        <View style={styles.centerContainer}>
+                            <View style={[styles.emptyIcon, { backgroundColor: theme.colors.surfaceVariant }]}>
+                                <Ionicons name="scan-outline" size={40} color={theme.colors.outline} />
+                            </View>
+                            <Text style={{ textAlign: "center", marginTop: 16, color: theme.colors.outline, fontSize: 16 }}>
+                                No scanned images yet.
                             </Text>
                         </View>
                     }
-                    contentContainerStyle={{ paddingBottom: 80 }}
+                    contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
                     onRefresh={fetchOCRHistory}
                     refreshing={isLoading}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
         </View>
     );
 };
-
 
 export default function TranslationHistoryScreen() {
     return (
@@ -145,64 +163,88 @@ export default function TranslationHistoryScreen() {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        padding: 16,
-        backgroundColor: "#fff",
     },
     headerContainer: {
         flexDirection: 'row',
         alignItems: "center",
-        marginBottom: 16,
-        marginTop: 10,
-        gap: 10,
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+        paddingBottom: 10,
     },
-    itemContainer: {
-        borderRadius: 16,
-        marginBottom: 12,
-        padding: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+    centerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 50
     },
-    headerRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 10,
+    card: {
+        borderRadius: 20,
+        marginBottom: 20,
+        overflow: 'hidden',
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    imageContainer: {
+        width: '100%',
+        height: 180,
+        position: 'relative',
+    },
+    image: {
+        width: '100%',
+        height: '100%',
     },
     langBadge: {
-        paddingHorizontal: 8,
+        position: 'absolute',
+        bottom: 10,
+        right: 10,
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 8,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     langText: {
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: "bold",
     },
     contentContainer: {
-        marginBottom: 5,
+        padding: 16,
+    },
+    textBlock: {
+        gap: 4,
+    },
+    label: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+        opacity: 0.8
     },
     originalText: {
-        fontSize: 16,
-        fontWeight: "500",
+        fontSize: 15,
+        lineHeight: 22,
+        fontStyle: 'italic',
     },
     translatedText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        marginTop: 2,
+        fontSize: 16,
+        fontWeight: "600",
+        lineHeight: 24,
     },
-    actionsRow: {
-        flexDirection: "row",
-        justifyContent: "flex-end",
-        gap: 15,
-    },
-    actionButton: {
-        padding: 4,
-    },
-    image: {
-        flex: 1,
+    divider: {
+        height: 1,
         width: '100%',
-        backgroundColor: '#0553',
+        marginVertical: 12,
+        opacity: 0.5
+    },
+    emptyIcon: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

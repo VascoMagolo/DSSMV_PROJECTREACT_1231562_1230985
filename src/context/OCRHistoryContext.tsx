@@ -1,6 +1,5 @@
 import { Action } from '@/src/types/types';
-import { useFocusEffect } from 'expo-router';
-import React, { createContext, useCallback, useContext, useReducer } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useReducer } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
 
@@ -48,7 +47,7 @@ type OCRHistoryContextType = {
     isLoading: boolean;
     error: string | null;
     fetchOCRHistory: () => Promise<void>;
-    saveOCRRecord: (imageUrl: string, extractedText: string, translationText: string, targetLanguage: string) => Promise<void>;
+    saveOCRRecord: (imageUrl: string, extractedText: string, translationText: string, targetLanguage: string, sourceLanguage: string) => Promise<void>;
     deleteOCRRecord: (id: string) => Promise<void>;
 };
 
@@ -80,13 +79,11 @@ export const OCRHistoryProvider = ({ children }: { children: React.ReactNode }) 
         }
     }, [user]);
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchOCRHistory();
-        }, [fetchOCRHistory])
-    );
-
-    const saveOCRRecord = async (imageUrl: string, extractedText: string, translated_text: string, targetLanguage: string) => {
+    useEffect(() => {
+        fetchOCRHistory();
+    }, [fetchOCRHistory]);
+    
+    const saveOCRRecord = useCallback(async (imageUrl: string, extractedText: string, translated_text: string, targetLanguage: string, sourceLanguage: string) => {
         if (!user) return;
 
         dispatch({ type: 'OPERATION_START' });
@@ -100,8 +97,7 @@ export const OCRHistoryProvider = ({ children }: { children: React.ReactNode }) 
                     extracted_text: extractedText,
                     translated_text: translated_text,
                     target_language: targetLanguage,
-                    source_language: 'auto', // later change to actual source language if needed
-                    timestamp: new Date().toISOString(),
+                    source_language: sourceLanguage,
                 });
 
             if (error) throw error;
@@ -110,9 +106,9 @@ export const OCRHistoryProvider = ({ children }: { children: React.ReactNode }) 
             console.error('Error saving OCR record:', error);
             dispatch({ type: 'SET_ERROR', payload: error.message || 'Error saving record' });
         }
-    };
+    }, [user, fetchOCRHistory]);
 
-    const deleteOCRRecord = async (id: string) => {
+    const deleteOCRRecord = useCallback(async (id: string) => {
         if (!user) return;
 
         dispatch({ type: 'OPERATION_START' });
@@ -128,7 +124,7 @@ export const OCRHistoryProvider = ({ children }: { children: React.ReactNode }) 
             console.error('Error deleting OCR record:', error);
             dispatch({ type: 'SET_ERROR', payload: error.message || 'Error deleting record' });
         }
-    };
+    }, [user, fetchOCRHistory]);
 
     return (
         <OCRHistoryContext.Provider

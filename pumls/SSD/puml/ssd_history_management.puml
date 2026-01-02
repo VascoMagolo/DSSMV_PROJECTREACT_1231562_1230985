@@ -1,0 +1,49 @@
+@startuml SSD: History Management
+title SSD: History Management (View & Delete)
+
+skinparam defaultFontName "Inter"
+skinparam sequenceArrowThickness 1.5
+
+actor "User" as User
+
+box "UI Layer" #FAFAFA
+    participant "HistoryScreen" as UI
+end box
+
+box "State Management" #EFEFEF
+    participant "HistoryContext" as Ctx
+end box
+
+box "Infrastructure" #E0E0E0
+    participant "Supabase" as DB
+end box
+
+== Scenario: View History ==
+
+User -> UI : Open History Tab
+UI -> Ctx : refreshHistory()
+activate Ctx
+Ctx -> DB : select * from translations order by date
+activate DB
+DB --> Ctx : [Record1, Record2...]
+deactivate DB
+Ctx --> UI : Update State
+deactivate Ctx
+UI -> User : Show List
+
+== Scenario: Delete Item ==
+
+User -> UI : Swipe Left -> Delete
+UI -> Ctx : deleteTranslation(id)
+activate Ctx
+Ctx -> DB : delete from translations where id=...
+activate DB
+DB --> Ctx : Success
+deactivate DB
+Ctx -> Ctx : refreshHistory()
+Ctx --> UI : Updated List
+deactivate Ctx
+
+UI -> User : Item Removed
+
+@enduml

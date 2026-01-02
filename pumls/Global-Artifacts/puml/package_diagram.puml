@@ -1,0 +1,87 @@
+@startuml Package Diagram
+title Package Diagram - Translator App (React Native/Expo)
+
+skinparam defaultFontName "Inter"
+skinparam packageBackgroundColor #F8F8F8
+skinparam packageBorderColor #A0A0A0
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #000000
+skinparam arrowColor #333333
+
+' --- Presentation Layer ---
+package "app (Routes & UI)" as AppLayer {
+    
+    package "(auth)" {
+        [login.tsx]
+    }
+    
+    package "(tabs)" {
+        [translation.tsx]
+        [image.tsx]
+        [phrases.tsx]
+        [bilingual.tsx]
+        [account.tsx]
+    }
+
+    package "history" {
+        [translation.tsx] as HistTrans
+        [ocr.tsx] as HistOCR
+        [bilingual.tsx] as HistBiling
+    }
+
+    [_layout.tsx]
+}
+
+' --- Business Logic Layer ---
+package "src/context (State Management)" as ContextLayer {
+    [UserContext]
+    [TranslationContext]
+    [PhrasesContext]
+    [TranslationHistoryContext]
+    [BilingualHistoryContext]
+}
+
+' --- Data Access Layer ---
+package "src/api (External Services)" as APILayer {
+    [translationAPI]
+    [ocrAPI]
+}
+
+package "src/services (Database)" as ServiceLayer {
+    [supabase]
+}
+
+' --- Cross-Cutting Concerns ---
+package "src/types (Domain Model)" as TypesLayer {
+    [types.ts]
+}
+
+package "constants (Configuration)" as ConstantsLayer {
+    [theme.ts]
+    [styles.ts]
+}
+
+' --- Dependencies ---
+
+' App depends on Contexts for logic
+AppLayer ..> ContextLayer : <<use>>
+AppLayer ..> ConstantsLayer : <<use>>
+
+' Contexts depend on APIs and Services for data
+ContextLayer ..> APILayer : <<use>>
+ContextLayer ..> ServiceLayer : <<use>>
+
+' Everyone uses Types
+AppLayer ..> TypesLayer : <<import>>
+ContextLayer ..> TypesLayer : <<import>>
+APILayer ..> TypesLayer : <<import>>
+
+' Specific Internal Dependencies
+[TranslationContext] ..> [translationAPI]
+[PhrasesContext] ..> [translationAPI]
+[PhrasesContext] ..> [supabase]
+[TranslationHistoryContext] ..> [supabase]
+[BilingualHistoryContext] ..> [supabase]
+[UserContext] ..> [supabase]
+
+@enduml

@@ -1,0 +1,50 @@
+@startuml SSD: Bilingual Mode
+title SSD: Bilingual Conversation (Split Mode)
+
+skinparam defaultFontName "Inter"
+skinparam sequenceArrowThickness 1.5
+
+actor "User A" as UserA
+actor "User B" as UserB
+
+box "UI Layer" #FAFAFA
+    participant "BilingualScreen" as UI
+end box
+
+box "State Management" #EFEFEF
+    participant "TranslationContext" as TransCtx
+    participant "BilingualHistoryContext" as HistCtx
+end box
+
+box "Infrastructure" #E0E0E0
+    participant "TranslationAPI" as API
+    participant "Supabase" as DB
+    participant "Expo Speech" as TTS
+end box
+
+== User A Speaks (Source Lang A -> Target Lang B) ==
+
+UserA -> UI : Tap Mic A
+UI -> UI : Start Listening (Speech-to-Text)
+UserA -> UI : Speaks "Olá"
+UI -> UI : setTextA("Olá")
+
+UI -> TransCtx : performDetectionAndTranslation("Olá", LangB)
+activate TransCtx
+TransCtx -> API : Translate("Olá", "pt", "en")
+API --> TransCtx : { translated: "Hello", ... }
+deactivate TransCtx
+
+UI -> UI : setTextB("Hello")
+
+group Auto-Save History
+    UI -> HistCtx : saveTranslation(original, translated, 'A')
+    activate HistCtx
+    HistCtx -> DB : insert into bilingual_history
+    deactivate HistCtx
+end
+
+UI -> TTS : speak("Hello", LangB)
+TTS -> UserB : Audio Output
+
+@enduml

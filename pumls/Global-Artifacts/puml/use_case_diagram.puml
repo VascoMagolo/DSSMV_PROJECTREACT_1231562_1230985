@@ -1,0 +1,57 @@
+@startuml Use Case Diagram - React Native
+title Use Case Diagram - Translator App
+
+skinparam defaultFontName "Inter"
+skinparam actorBorderColor #000000
+skinparam useCaseBackgroundColor #FFFFFF
+skinparam packageBackgroundColor #F8F8F8
+
+left to right direction
+
+actor "Guest" as Guest
+actor "Registered User" as RegisteredUser
+
+package "External Systems" {
+    actor "Supabase (DB)" as Supabase
+    actor "Translation API" as TranslationAPI
+    actor "OCR API" as OCRAPI
+}
+
+package "Core Features" {
+    usecase UC_TranslateVoice as "Voice Translation\n(Speech -> Text -> Translate -> TTS)"
+    usecase UC_TranslateImage as "Image Translation\n(Camera -> OCR -> Translate)"
+    usecase UC_Bilingual as "Bilingual Conversation\n(Split Mode)"
+    usecase UC_BrowsePhrases as "Quick Phrases\n(Manage & Translate)"
+}
+
+package "Account & History" {
+    usecase UC_Login as "Login / Register"
+    usecase UC_ManageHistory as "Manage History\n(View, Delete, Favorite)"
+}
+
+Guest --> UC_TranslateVoice
+Guest --> UC_TranslateImage
+Guest --> UC_Bilingual
+Guest --> UC_BrowsePhrases
+Guest --> UC_Login
+
+Guest <|-- RegisteredUser
+
+RegisteredUser --> UC_ManageHistory
+
+' Relationships
+UC_TranslateVoice ..> TranslationAPI : uses
+UC_TranslateImage ..> OCRAPI : uses
+UC_TranslateImage ..> TranslationAPI : uses
+UC_Bilingual ..> TranslationAPI : uses
+UC_BrowsePhrases ..> TranslationAPI : uses
+
+UC_Login ..> Supabase : auth
+UC_ManageHistory ..> Supabase : read/write
+UC_BrowsePhrases ..> Supabase : read/write (user phrases)
+
+' Auto-save relationships
+UC_TranslateVoice ..> UC_ManageHistory : <<includes>> (if logged in)
+UC_Bilingual ..> UC_ManageHistory : <<includes>> (if logged in)
+
+@enduml
