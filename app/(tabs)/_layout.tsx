@@ -3,14 +3,14 @@ import React from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/src/context/UserContext';
 import { MaterialIcons } from '@expo/vector-icons';
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { isGuest } = useAuth();
   
   const backgroundColor = colorScheme === 'dark' ? '#1A1A1A' : '#FFFFFF';
   const inactiveColor = colorScheme === 'dark' ? '#888888' : '#9E9E9E';
-
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -24,24 +24,22 @@ export default function TabLayout() {
           marginBottom: 5,
         },
         tabBarStyle: {
-          position: 'absolute',
-          bottom: 25, 
-          left: 20,
-          right: 20,
-          height: 70,
-          elevation: 10,
+          bottom: insets.bottom,          
+          left: 16,           
+          right: 16,         
+          height: 65,          
+          elevation: 10,     
           backgroundColor: backgroundColor,
-          borderRadius: 20,
-          borderTopWidth: 0,
+          borderRadius: 20,   
+          borderTopWidth: 0,   
           paddingTop: 10,
           paddingBottom: 10,
-          
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 5 },
           shadowOpacity: 0.15,
           shadowRadius: 10,
         },
-        tabBarHideOnKeyboard: true,
+        tabBarHideOnKeyboard: true, 
       }}>
       
       <Tabs.Screen

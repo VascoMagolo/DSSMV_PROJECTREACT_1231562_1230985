@@ -232,7 +232,7 @@ const PhrasesContent = () => {
                 </Text>
             </View>
           }
-          contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
+          contentContainerStyle={{ paddingBottom: 50, paddingTop: 10 }}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     margin: 20,
     right: 0,
-    bottom: 0,
+    bottom: 50,
     borderRadius: 16,
     elevation: 4,
   },

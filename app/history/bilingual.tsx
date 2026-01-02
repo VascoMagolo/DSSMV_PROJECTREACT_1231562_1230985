@@ -269,13 +269,14 @@ export default function BilingualHistoryPage() {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
+        
     },
     headerContainer: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: 'space-between',
         paddingHorizontal: 8,
-        paddingVertical: 10,
+        paddingVertical: 30,
     },
     centerContainer: {
         flex: 1,

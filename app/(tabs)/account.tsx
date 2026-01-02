@@ -260,7 +260,7 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
   header: {
     alignItems: "center",
