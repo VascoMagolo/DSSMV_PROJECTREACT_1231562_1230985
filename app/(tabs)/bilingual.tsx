@@ -1,5 +1,5 @@
 import { styles as stylesA } from '@/constants/styles';
-import { useBilingualHistory } from '@/src/context/BilingualHistoryContext';
+import { useHistory } from '@/src/context/BilingualHistoryContext';
 import { useTranslation } from "@/src/context/TranslationContext";
 import { languagesData } from '@/src/types/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -83,7 +83,7 @@ export default function BilingualScreen() {
   const theme = useTheme();
   const [langA, setLangA] = useState<string>('en');
   const [langB, setLangB] = useState<string>('pt');
-  const { saveTranslation } = useBilingualHistory(); 
+  const { saveTranslation } = useHistory(); 
   const [textA, setTextA] = useState('');
   const [textB, setTextB] = useState('');
   const [listeningA, setListeningA] = useState(false);
@@ -92,7 +92,6 @@ export default function BilingualScreen() {
   const [translatedText, setTranslatedText] = useState("");
   const [hasPermission, setHasPermission] = useState(false);
 
-  // Speech Recognition Events (da 2ª versão)
   useSpeechRecognitionEvent("result", (event) => {
     if (!event.results || event.results.length === 0) return;
   const transcript = event.results[0].transcript || "";
@@ -156,7 +155,6 @@ export default function BilingualScreen() {
       setTranslatedText(result.translatedText);
       setTextB(result.translatedText);
       
-      // Salva no histórico (da 1ª versão)
       await saveTranslation(
         result.originalText, 
         result.translatedText,
@@ -175,7 +173,6 @@ export default function BilingualScreen() {
       setTranslatedText(result.translatedText);
       setTextA(result.translatedText);
       
-      // Salva no histórico (da 1ª versão)
       await saveTranslation(
         result.originalText,
         result.translatedText,
