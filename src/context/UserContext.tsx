@@ -16,6 +16,8 @@ type UserContextType = {
   signInAsGuest: () => void;
   signOut: () => void;
   updateUserProfile: (updates: Partial<CustomUser>) => Promise<{ error: string | null }>;
+  userAlreadyExists: (email: string) => Promise<boolean>;
+  createUser: (email: string, password: string, fullName: string, preferred_language: string | null) => Promise<boolean>;
 };
 const UserContext = createContext<UserContextType>({} as UserContextType);
 
@@ -125,8 +127,31 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const userAlreadyExists = async (email: string) => {
+    const { data } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+    return !!data;
+  }
+
+  const createUser = async (email: string, password: string, fullName: string, preferred_language: string | null) => {
+    const { error } = await supabase
+            .from('users')
+            .insert({
+              name: fullName,
+              email: email,
+              password: password,
+              preferred_language: preferred_language || 'en', 
+            });
+    
+          if (error) throw error ; 
+    return true;
+  }
+
   return (
-    <UserContext.Provider value={{ user, isLoading, isGuest, signIn, signInAsGuest, signOut, updateUserProfile }}>
+    <UserContext.Provider value={{ user, isLoading, isGuest, signIn, signInAsGuest, signOut, updateUserProfile, userAlreadyExists, createUser }}>
       {children}
     </UserContext.Provider>
   );
