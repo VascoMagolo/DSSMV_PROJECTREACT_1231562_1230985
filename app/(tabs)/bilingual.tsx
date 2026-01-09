@@ -4,10 +4,29 @@ import { useTranslation } from "@/src/context/TranslationContext";
 import { languagesData } from '@/src/types/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { IconButton, useTheme } from 'react-native-paper';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition';
+
+const localeMap: Record<string, string> = {
+  pt: 'pt-PT',
+  en: 'en-US',
+  es: 'es-ES',
+  fr: 'fr-FR',
+};
+
 const TranslationCard = ({
   language,
   setLanguage,
@@ -56,7 +75,6 @@ const TranslationCard = ({
           <Ionicons name={isListening ? "stop" : "mic"} size={25} color="#FFF" />
         </TouchableOpacity>
       </View>
-
     </View>
   );
 };
@@ -65,18 +83,60 @@ export default function BilingualScreen() {
   const theme = useTheme();
   const [langA, setLangA] = useState<string>('en');
   const [langB, setLangB] = useState<string>('pt');
-  const {saveTranslation} = useHistory();
+  const { saveTranslation } = useHistory(); 
   const [textA, setTextA] = useState('');
   const [textB, setTextB] = useState('');
   const [listeningA, setListeningA] = useState(false);
   const [listeningB, setListeningB] = useState(false);
   const { performDetectionAndTranslation, isLoading } = useTranslation();
   const [translatedText, setTranslatedText] = useState("");
+  const [hasPermission, setHasPermission] = useState(false);
+
+  useSpeechRecognitionEvent("result", (event) => {
+    if (!event.results || event.results.length === 0) return;
+  const transcript = event.results[0].transcript || "";
+
+  if (listeningA) {
+    setTextA(transcript);
+  }
+
+  if (listeningB) {
+    setTextB(transcript);
+  }
+});
+
+  useSpeechRecognitionEvent("end", () => {
+    if (listeningA && textA.trim()) {
+    handleTranslateFromA(textA);
+  }
+
+  if (listeningB && textB.trim()) {
+    handleTranslateFromB(textB);
+  }
+
+  setListeningA(false);
+  setListeningB(false);
+});
+
+  useSpeechRecognitionEvent("error", (event) => {
+    console.log("STT error:", event.error, event.message);
+    setListeningA(false);
+    setListeningB(false);
+  });
+
+  useEffect(() => {
+    const requestPermissions = async () => {
+      const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      setHasPermission(granted);
+    };
+    requestPermissions();
+  }, []);
 
   const handleTTS = async (text: string, language: string) => {
-      Speech.speak(text, { language: language });
-    };
-  
+    const locale = localeMap[language] || 'en-US';
+    Speech.speak(text, { language: locale });
+  };
+
   const handleSwap = () => {
     const tempLang = langA;
     const tempText = textA;
@@ -88,56 +148,92 @@ export default function BilingualScreen() {
     setTextB(tempText);
   };
 
-const handleSpeakA = async () => {
-    const isCurrentlyListening = listeningA;
-    setListeningA(!isCurrentlyListening); 
-
-    if (!isCurrentlyListening) {
-        setTextA("Listening...");
-        let text = "Bom dia, como voce esta neste belo dia meu caro senhor!"; 
-        const result = await performDetectionAndTranslation(text, langB);
-
-        if (result) {
-            setTranslatedText(result.translatedText);
-            setTextB(result.translatedText);
-            
-           
-            await saveTranslation(
-                result.originalText,   
-                result.translatedText,
-                langA,                
-                langB,                 
-                'A'                    
-            );
-            handleTTS(result.translatedText, langB);
-        }
+  const handleTranslateFromA = async (text: string) => {
+    if (!text.trim()) return;
+    const result = await performDetectionAndTranslation(text, langB);
+    if (result) {
+      setTranslatedText(result.translatedText);
+      setTextB(result.translatedText);
+      
+      await saveTranslation(
+        result.originalText, 
+        result.translatedText,
+        langA, 
+        langB, 
+        'A'
+      );
+      handleTTS(result.translatedText, langB);
     }
+  };
+
+  const handleTranslateFromB = async (text: string) => {
+    if (!text.trim()) return;
+    const result = await performDetectionAndTranslation(text, langA);
+    if (result) {
+      setTranslatedText(result.translatedText);
+      setTextA(result.translatedText);
+      
+      await saveTranslation(
+        result.originalText,
+        result.translatedText,
+        langB,
+        langA,
+        'B'
+      );
+      handleTTS(result.translatedText, langA);
+    }
+  };
+
+  const startRecognition = async (listenLang: string) => {
+    if (!hasPermission) return;
+
+    const locale = localeMap[listenLang] || 'en-US';
+
+    try {
+      await ExpoSpeechRecognitionModule.start({
+        lang: locale,
+        interimResults: true,
+        continuous: false,
+      });
+    } catch (error) {
+      console.log("Error initiating STT:", error);
+    }
+  };
+
+  const stopRecognition = async () => {
+    try {
+      await ExpoSpeechRecognitionModule.stop();
+    } catch (error) {
+      console.log("Error stopping STT:", error);
+    }
+  };
+
+  const handleSpeakA = async () => {
+    if (listeningA) {
+      setListeningA(false);
+      await stopRecognition();
+      return;
+    }
+
+    setListeningA(true);
+    setListeningB(false);
+    setTextA("Listening...");
+    await startRecognition(langA);
   };
 
   const handleSpeakB = async () => {
-    const isCurrentlyListening = listeningB;
-    setListeningB(!isCurrentlyListening); 
-    if (!isCurrentlyListening) {
-        setTextB("Listening...");
-        let text = "Good Morning, how are you on this beautiful day my dear sir!"; 
-        const result = await performDetectionAndTranslation(text, langA);
-
-        if (result) {
-            setTranslatedText(result.translatedText);
-            setTextA(result.translatedText);
-
-         
-            await saveTranslation(
-                result.originalText,    
-                result.translatedText,  
-                langB,                 
-                langA,                 
-                'B'                    
-            );
-            handleTTS(result.translatedText, langA);
-        }
+    if (listeningB) {
+      setListeningB(false);
+      await stopRecognition();
+      return;
     }
+
+    setListeningB(true);
+    setListeningA(false);
+    setTextB("Listening...");
+    await startRecognition(langB);
   };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -171,7 +267,6 @@ const handleSpeakA = async () => {
         isListening={listeningB}
         theme={theme}
       />
-
     </KeyboardAvoidingView>
   );
 }

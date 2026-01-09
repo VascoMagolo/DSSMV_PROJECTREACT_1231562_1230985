@@ -4,30 +4,108 @@ import { useHistory } from "@/src/context/TranslationHistoryContext";
 import { useAuth } from "@/src/context/UserContext";
 import { languagesData } from "@/src/types/types";
 import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from 'expo-clipboard';
-import * as Speech from 'expo-speech';
-import { useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import * as Clipboard from "expo-clipboard";
+import * as Speech from "expo-speech";
+import { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
-import { IconButton, useTheme, Text as PaperText, Surface } from "react-native-paper";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  IconButton,
+  useTheme,
+  Text as PaperText,
+  Surface,
+} from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from "expo-speech-recognition";
+
+const localeMap: Record<string, string> = {
+  pt: "pt-PT",
+  en: "en-US",
+  es: "es-ES",
+  fr: "fr-FR",
+};
+
 export default function TranslationScreen() {
   const { user } = useAuth();
   const theme = useTheme();
   const { saveTranslation } = useHistory();
   const { performDetectionAndTranslation, isLoading } = useTranslation();
 
-  const [translatedText, setTranslatedText] = useState("");
-  const [language, setLanguage] = useState<string>(
+  const [language, setLanguage] = useState(
     user?.preferred_language || "pt"
   );
 
-  // Mock input text for translation
-  let text = "Bom dia, como voce esta neste belo dia meu caro senhor!";
+  const [spokenText, setSpokenText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
+  const [spokenLanguage, setSpokenLanguage] = useState("en");
+  useSpeechRecognitionEvent("result", (event) => {
+    if (event.results?.length) {
+      setSpokenText(event.results[0].transcript);
+    }
+  });
 
-  const handleTranslationClick = async () => {
+  useSpeechRecognitionEvent("end", () => {
+    setIsRecording(false);
+    if (spokenText) {
+      handleTranslation(spokenText);
+    }
+  });
+
+  useSpeechRecognitionEvent("error", (event) => {
+    setIsRecording(false);
+    Alert.alert(
+      "Recognition error",
+      event.message || "Unknown error"
+    );
+  });
+
+  useEffect(() => {
+    (async () => {
+      const { granted } =
+        await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      setHasPermission(granted);
+      if (!granted) {
+        Alert.alert(
+          "Permission required",
+          "Microphone access must be granted."
+        );
+      }
+    })();
+  }, []);
+
+  const startRecording = async () => {
+    if (!hasPermission) return;
+
+    setSpokenText("");
+    setTranslatedText("");
+    setIsRecording(true);
+
+    await ExpoSpeechRecognitionModule.start({
+
+      interimResults: true,
+      continuous: false,
+    });
+  };
+
+  const stopRecording = async () => {
+    await ExpoSpeechRecognitionModule.stop();
+  };
+
+  const handleTranslation = async (text: string) => {
     const result = await performDetectionAndTranslation(text, language);
-
     if (result) {
       setTranslatedText(result.translatedText);
       await saveTranslation(
@@ -39,42 +117,81 @@ export default function TranslationScreen() {
     }
   };
 
-  const handleTTS = async () => {
-    Speech.speak(translatedText, { language: language });
+  const handleTTS = () => {
+    if (!translatedText) return;
+    Speech.speak(translatedText, {
+      language: localeMap[language] || "pt-PT",
+    });
   };
 
   const copyToClipboard = () => {
     Clipboard.setStringAsync(translatedText);
-  }
+  };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-    
         <View style={styles.header}>
-          <PaperText variant="headlineMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+          <PaperText
+            variant="headlineMedium"
+            style={{ fontWeight: "bold", color: theme.colors.primary }}
+          >
             Voice Translator
           </PaperText>
-          <PaperText variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+          <PaperText
+            variant="bodyMedium"
+            style={{ color: theme.colors.onSurfaceVariant }}
+          >
             Tap the mic to translate instantly
           </PaperText>
         </View>
-
-  
-        <View style={styles.selectorContainer}>
-          <PaperText variant="labelLarge" style={{ marginBottom: 5, color: theme.colors.outline }}>
-            Translate to:
+         <View style={styles.selectorContainer}>
+          <PaperText
+            variant="labelLarge"
+            style={{ marginBottom: 5, color: theme.colors.outline }}
+          >
+            Translate from:
           </PaperText>
           <Dropdown
-            style={[stylesA.dropdown, { borderColor: theme.colors.outline, borderWidth: 1, borderRadius: 12 }]}
+            style={[
+              stylesA.dropdown,
+              { borderColor: theme.colors.outline, borderWidth: 1 },
+            ]}
             placeholderStyle={stylesA.placeholderStyle}
             selectedTextStyle={stylesA.selectedTextStyle}
             data={languagesData}
-            maxHeight={300}
             labelField="label"
             valueField="value"
-            placeholder="Select Language"
+            value={spokenLanguage}
+            onChange={(item) => setLanguage(item.value)}
+            renderRightIcon={() => (
+              <Ionicons
+                name="chevron-down"
+                size={20}
+                color={theme.colors.onSurface}
+              />
+            )}
+          />
+        </View>
+        <View style={styles.selectorContainer}>
+          <PaperText
+            variant="labelLarge"
+            style={{ marginBottom: 5, color: theme.colors.outline }}
+          >
+            Translate to:
+          </PaperText>
+          <Dropdown
+            style={[
+              stylesA.dropdown,
+              { borderColor: theme.colors.outline, borderWidth: 1 },
+            ]}
+            placeholderStyle={stylesA.placeholderStyle}
+            selectedTextStyle={stylesA.selectedTextStyle}
+            data={languagesData}
+            labelField="label"
+            valueField="value"
             value={language}
             onChange={(item) => setLanguage(item.value)}
             renderRightIcon={() => (
@@ -87,15 +204,12 @@ export default function TranslationScreen() {
           />
         </View>
 
-        <Surface style={[styles.inputCard, { backgroundColor: theme.colors.surfaceVariant }]} elevation={1}>
-          <View style={styles.cardHeader}>
-             <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.colors.primary} />
-             <PaperText variant="labelMedium" style={{ marginLeft: 8, color: theme.colors.primary }}>
-               Original
-             </PaperText>
-          </View>
-          <PaperText variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic' }}>
-            "{text}"
+        <Surface style={styles.inputCard} elevation={1}>
+          <PaperText variant="labelMedium" style={{ marginBottom: 5 }}>
+            Original
+          </PaperText>
+          <PaperText variant="bodyLarge" style={{ fontStyle: "italic" }}>
+            {spokenText || "Tap the mic and speak"}
           </PaperText>
         </Surface>
 
@@ -103,138 +217,61 @@ export default function TranslationScreen() {
           <TouchableOpacity
             style={[
               styles.micButton,
-              { 
-                backgroundColor: theme.colors.primary,
-                shadowColor: theme.colors.primary,
-              }
+              {
+                backgroundColor: isRecording
+                  ? theme.colors.error
+                  : theme.colors.primary,
+              },
             ]}
-            onPress={handleTranslationClick}
+            onPress={isRecording ? stopRecording : startRecording}
             disabled={isLoading}
           >
-            {isLoading ? (
-              <ActivityIndicator size="large" color="#FFF" />
+            {isRecording ? (
+              <Ionicons name="stop" size={40} color="#fff" />
             ) : (
-              <Ionicons name="mic" size={40} color="#FFF" />
+              <Ionicons name="mic" size={40} color="#fff" />
             )}
           </TouchableOpacity>
-          <PaperText variant="labelMedium" style={{ marginTop: 10, color: theme.colors.onSurfaceVariant }}>
-            {isLoading ? "Translating..." : "Tap to Speak"}
+          <PaperText style={{ marginTop: 10 }}>
+            {isRecording ? "Listening..." : "Tap to Speak"}
           </PaperText>
         </View>
 
-        {translatedText ? (
-          <Surface style={[styles.resultCard, { backgroundColor: theme.colors.surface }]} elevation={4}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="language" size={18} color={theme.colors.secondary} />
-              <PaperText variant="labelMedium" style={{ marginLeft: 8, color: theme.colors.secondary }}>
-                Translation ({language.toUpperCase()})
-              </PaperText>
-            </View>
-            
-            <PaperText variant="headlineSmall" style={{ fontWeight: '500', color: theme.colors.onSurface, marginVertical: 10 }}>
+        {translatedText && (
+          <Surface style={styles.resultCard} elevation={4}>
+            <PaperText variant="headlineSmall">
               {translatedText}
             </PaperText>
-
-            <View style={styles.divider} />
-
             <View style={styles.actionRow}>
-              <View style={{ flexDirection: 'row' }}>
-                <IconButton 
-                  icon="volume-high" 
-                  size={24} 
-                  iconColor={theme.colors.primary} 
-                  onPress={handleTTS} 
-                />
-                <IconButton 
-                  icon="content-copy" 
-                  size={24} 
-                  iconColor={theme.colors.primary} 
-                  onPress={copyToClipboard} 
-                />
-              </View>
-              <IconButton 
-                icon="share-variant" 
-                size={24} 
-                iconColor={theme.colors.outline} 
-                onPress={() => {}} 
-              />
+              <IconButton icon="volume-high" onPress={handleTTS} />
+              <IconButton icon="content-copy" onPress={copyToClipboard} />
             </View>
           </Surface>
-        ) : (
-          <View style={styles.placeholderContainer}>
-             <PaperText variant="bodyMedium" style={{ color: theme.colors.outline, textAlign: 'center' }}>
-               The translation will appear here.
-             </PaperText>
-          </View>
         )}
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+/* -------- Styles -------- */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 50,
-  },
-  header: {
-    marginBottom: 25,
-    marginTop: 10,
-  },
-  selectorContainer: {
-    marginBottom: 25,
-  },
-  inputCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 30,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  micContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
+  container: { flex: 1 },
+  scrollContent: { padding: 20 },
+  header: { marginBottom: 25 },
+  selectorContainer: { marginBottom: 25 },
+  inputCard: { padding: 16, borderRadius: 16, marginBottom: 30 },
+  micContainer: { alignItems: "center", marginBottom: 30 },
   micButton: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
   },
-  resultCard: {
-    padding: 20,
-    borderRadius: 20,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0', 
-    marginVertical: 10,
-    opacity: 0.5,
-  },
+  resultCard: { padding: 20, borderRadius: 20 },
   actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginLeft: -10, 
-    marginRight: -10
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
-  placeholderContainer: {
-    marginTop: 20,
-    padding: 20,
-    opacity: 0.6,
-    justifyContent: 'center',
-    alignItems: 'center'
-  }
 });
