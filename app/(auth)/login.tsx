@@ -13,7 +13,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/UserContext';
-import { supabase } from '../../src/services/supabase';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useTheme } from 'react-native-paper';
 import { languagesData } from '@/src/types/types';
@@ -21,7 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AuthScreen() {
   const router = useRouter();
-  const { signIn, signInAsGuest } = useAuth();
+  const { signIn, signInAsGuest, userAlreadyExists, createUser } = useAuth();
   const theme = useTheme();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -52,35 +51,24 @@ export default function AuthScreen() {
     }
 
     setLoading(true);
-    try {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single();
 
-      if (existingUser) {
+    try {
+      const exists = await userAlreadyExists(email);
+      if (exists) {
         alert('This email is already registered.');
         setLoading(false);
         return;
       }
 
-      const { error } = await supabase
-        .from('users')
-        .insert({
-          name: fullName,
-          email: email,
-          password: password,
-          preferred_language: preferred_language || 'en', 
-        });
+      await createUser(email, password, fullName, preferred_language);
 
-      if (error) throw error;
-
-      alert('Account created successfully! You are now logged in.');
       await handleLogin();
-
-    } catch (error: any) {
-      alert('Error: ' + error.message);
+      
+      setLoading(false);
+      
+      alert('Account created successfully! You are now logged in.');
+    } catch (error) {
+      alert('Error creating account. Please try again.');
       setLoading(false);
     }
   };
