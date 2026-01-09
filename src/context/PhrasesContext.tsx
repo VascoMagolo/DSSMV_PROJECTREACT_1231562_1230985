@@ -33,7 +33,7 @@ const initialState: PhrasesState = {
   error: null,
 };
 
-const phrasesReducer = (state: PhrasesState, action: PhrasesAction): PhrasesState => {
+export const phrasesReducer = (state: PhrasesState, action: PhrasesAction): PhrasesState => {
   switch (action.type) {
     case 'FETCH_START':
     case 'OPERATION_START':

@@ -196,7 +196,7 @@ export default function BilingualScreen() {
         continuous: false,
       });
     } catch (error) {
-      console.log("Erro ao iniciar STT:", error);
+      console.log("Error initiating STT:", error);
     }
   };
 
@@ -204,7 +204,7 @@ export default function BilingualScreen() {
     try {
       await ExpoSpeechRecognitionModule.stop();
     } catch (error) {
-      console.log("Erro ao parar STT:", error);
+      console.log("Error stopping STT:", error);
     }
   };
 

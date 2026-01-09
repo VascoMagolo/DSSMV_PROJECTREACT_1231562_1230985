@@ -13,6 +13,6 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "__tests__/03-bilingual-translation.test.js", "__tests__/04-history-crud.test.js", "__tests__/05-ocr-pipeline.test.js", "__tests__/06-error-handling.test.js"  ]
+  ],
 }
 

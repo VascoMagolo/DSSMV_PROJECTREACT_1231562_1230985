@@ -29,7 +29,6 @@ import {
   useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
 
-/* -------- locale map STT / TTS -------- */
 const localeMap: Record<string, string> = {
   pt: "pt-PT",
   en: "en-US",
@@ -51,8 +50,7 @@ export default function TranslationScreen() {
   const [translatedText, setTranslatedText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
-
-  /* -------- STT EVENTS -------- */
+  const [spokenLanguage, setSpokenLanguage] = useState("en");
   useSpeechRecognitionEvent("result", (event) => {
     if (event.results?.length) {
       setSpokenText(event.results[0].transcript);
@@ -69,12 +67,11 @@ export default function TranslationScreen() {
   useSpeechRecognitionEvent("error", (event) => {
     setIsRecording(false);
     Alert.alert(
-      "Erro no reconhecimento",
-      event.message || "Erro desconhecido"
+      "Recognition error",
+      event.message || "Unknown error"
     );
   });
 
-  /* -------- Permissions -------- */
   useEffect(() => {
     (async () => {
       const { granted } =
@@ -82,14 +79,13 @@ export default function TranslationScreen() {
       setHasPermission(granted);
       if (!granted) {
         Alert.alert(
-          "Permissão necessária",
-          "É necessário permitir o acesso ao microfone."
+          "Permission required",
+          "Microphone access must be granted."
         );
       }
     })();
   }, []);
 
-  /* -------- STT Controls -------- */
   const startRecording = async () => {
     if (!hasPermission) return;
 
@@ -98,7 +94,7 @@ export default function TranslationScreen() {
     setIsRecording(true);
 
     await ExpoSpeechRecognitionModule.start({
-      lang: localeMap[language] || "pt-PT",
+
       interimResults: true,
       continuous: false,
     });
@@ -108,7 +104,6 @@ export default function TranslationScreen() {
     await ExpoSpeechRecognitionModule.stop();
   };
 
-  /* -------- Translation -------- */
   const handleTranslation = async (text: string) => {
     const result = await performDetectionAndTranslation(text, language);
     if (result) {
@@ -122,7 +117,6 @@ export default function TranslationScreen() {
     }
   };
 
-  /* -------- Actions -------- */
   const handleTTS = () => {
     if (!translatedText) return;
     Speech.speak(translatedText, {
@@ -134,7 +128,6 @@ export default function TranslationScreen() {
     Clipboard.setStringAsync(translatedText);
   };
 
-  /* -------- UI -------- */
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -154,7 +147,34 @@ export default function TranslationScreen() {
             Tap the mic to translate instantly
           </PaperText>
         </View>
-
+         <View style={styles.selectorContainer}>
+          <PaperText
+            variant="labelLarge"
+            style={{ marginBottom: 5, color: theme.colors.outline }}
+          >
+            Translate from:
+          </PaperText>
+          <Dropdown
+            style={[
+              stylesA.dropdown,
+              { borderColor: theme.colors.outline, borderWidth: 1 },
+            ]}
+            placeholderStyle={stylesA.placeholderStyle}
+            selectedTextStyle={stylesA.selectedTextStyle}
+            data={languagesData}
+            labelField="label"
+            valueField="value"
+            value={spokenLanguage}
+            onChange={(item) => setLanguage(item.value)}
+            renderRightIcon={() => (
+              <Ionicons
+                name="chevron-down"
+                size={20}
+                color={theme.colors.onSurface}
+              />
+            )}
+          />
+        </View>
         <View style={styles.selectorContainer}>
           <PaperText
             variant="labelLarge"
