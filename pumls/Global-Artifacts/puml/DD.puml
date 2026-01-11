@@ -26,7 +26,7 @@ cloud "Internet" {
 App --> SupabaseNode : HTTPS / REST\n(Data & Auth)
 App --> RapidAPI : HTTPS / REST\n(API Calls)
 
-DB -[hidden]- Auth
+
 TransAPI -[hidden]- OCRService
 
 @enduml
