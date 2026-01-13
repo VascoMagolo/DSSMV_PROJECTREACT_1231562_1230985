@@ -28,5 +28,10 @@ export function validateLogin(
       preferred_language: dbUser.preferred_language,
     },
     error: null,
-  }
+  } 
+}
+export function canShowAccountTab(params: { user: CustomUser | null; isGuest: boolean }): boolean {
+  const { user, isGuest } = params;
+  if (isGuest) return false;
+  return !!user;
 }

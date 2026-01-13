@@ -1,4 +1,5 @@
-import { validateLogin } from './user.logic'
+import { validateLogin, canShowAccountTab} from '@/src/domain/user/user.logic'
+
 
 describe('UserContext login logic', () => {
 
@@ -46,3 +47,19 @@ describe('UserContext login logic', () => {
     expect(result.user).toBeNull()
   })
 })
+describe("canShowAccountTab", () => {
+  it("does NOT allow account tab for guest user", () => {
+    const result = canShowAccountTab({ user: null, isGuest: true });
+    expect(result).toBe(false);
+  });
+
+  it("allows account tab for authenticated user", () => {
+    const result = canShowAccountTab({ user: { id: "1", email: "test@test.com" }, isGuest: false });
+    expect(result).toBe(true);
+  });
+
+  it("does NOT allow account tab if user exists but is guest", () => {
+    const result = canShowAccountTab({ user: { id: "1", email: "test@test.com" }, isGuest: true });
+    expect(result).toBe(false);
+  });
+});
