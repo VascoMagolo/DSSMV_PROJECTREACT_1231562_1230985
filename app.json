@@ -32,7 +32,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.francisco_silva05.RTTC"
+      "package": "com.vascomagolo.RTTC"
     },
 
     "web": {
@@ -85,7 +85,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "6f775570-456a-495e-babd-a73e897af478"
+        "projectId": "a89ed89c-1aa7-4283-8a9a-dd8675d6773c"
       }
     }
   }

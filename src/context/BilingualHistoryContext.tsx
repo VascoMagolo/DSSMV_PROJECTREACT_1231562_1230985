@@ -3,6 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import React, { createContext, useCallback, useContext, useReducer } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './UserContext';
+
+// Define the structure of a bilingual record
 export type BilingualRecord = {
   id: string;
   user_id: string;
@@ -15,14 +17,17 @@ export type BilingualRecord = {
   created_at: string;
 };
 
+// Definition of state and actions for the reducer
 type BilingualHistoryState = {
   bilingualHistory: BilingualRecord[];
   isLoading: boolean;
   error: string | null;
 };
 
+// Define action types
 type BilingualHistoryAction = Action<BilingualRecord>;
 
+// Initial state for the reducer
 const initialState: BilingualHistoryState = {
     bilingualHistory: [],
     isLoading: false,
