@@ -2,32 +2,26 @@ import { styles as stylesA } from "@/constants/styles";
 import { useTranslation } from "@/src/context/TranslationContext";
 import { useHistory } from "@/src/context/TranslationHistoryContext";
 import { useAuth } from "@/src/context/UserContext";
+import { useSpeechRecognition } from "@/src/hooks/speechRecognition";
 import { languagesData } from "@/src/types/types";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Speech from "expo-speech";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  StyleSheet,
-  View,
-  TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import {
   IconButton,
-  useTheme,
   Text as PaperText,
   Surface,
+  useTheme,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
 
 const localeMap: Record<string, string> = {
   pt: "pt-PT",
@@ -42,67 +36,9 @@ export default function TranslationScreen() {
   const { saveTranslation } = useHistory();
   const { performDetectionAndTranslation, isLoading } = useTranslation();
 
-  const [language, setLanguage] = useState(
-    user?.preferred_language || "pt"
-  );
-
-  const [spokenText, setSpokenText] = useState("");
+  const [language, setLanguage] = useState(user?.preferred_language || "pt");
   const [translatedText, setTranslatedText] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
-  const [hasPermission, setHasPermission] = useState(false);
   const [spokenLanguage, setSpokenLanguage] = useState("en");
-  useSpeechRecognitionEvent("result", (event) => {
-    if (event.results?.length) {
-      setSpokenText(event.results[0].transcript);
-    }
-  });
-
-  useSpeechRecognitionEvent("end", () => {
-    setIsRecording(false);
-    if (spokenText) {
-      handleTranslation(spokenText);
-    }
-  });
-
-  useSpeechRecognitionEvent("error", (event) => {
-    setIsRecording(false);
-    Alert.alert(
-      "Recognition error",
-      event.message || "Unknown error"
-    );
-  });
-
-  useEffect(() => {
-    (async () => {
-      const { granted } =
-        await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      setHasPermission(granted);
-      if (!granted) {
-        Alert.alert(
-          "Permission required",
-          "Microphone access must be granted."
-        );
-      }
-    })();
-  }, []);
-
-  const startRecording = async () => {
-    if (!hasPermission) return;
-
-    setSpokenText("");
-    setTranslatedText("");
-    setIsRecording(true);
-
-    await ExpoSpeechRecognitionModule.start({
-
-      interimResults: true,
-      continuous: false,
-    });
-  };
-
-  const stopRecording = async () => {
-    await ExpoSpeechRecognitionModule.stop();
-  };
 
   const handleTranslation = async (text: string) => {
     const result = await performDetectionAndTranslation(text, language);
@@ -115,6 +51,19 @@ export default function TranslationScreen() {
         result.targetLang
       );
     }
+  };
+
+  const { 
+    spokenText, 
+    isRecording, 
+    startRecording, 
+    stopRecording,
+    setSpokenText 
+  } = useSpeechRecognition((text) => handleTranslation(text));
+
+  const onStartRecording = () => {
+    setTranslatedText("");
+    startRecording();
   };
 
   const handleTTS = () => {
@@ -134,59 +83,39 @@ export default function TranslationScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <PaperText
-            variant="headlineMedium"
-            style={{ fontWeight: "bold", color: theme.colors.primary }}
-          >
-            Voice Translator
-          </PaperText>
-          <PaperText
-            variant="bodyMedium"
-            style={{ color: theme.colors.onSurfaceVariant }}
-          >
-            Tap the mic to translate instantly
-          </PaperText>
+             <PaperText variant="headlineMedium" style={{ fontWeight: "bold", color: theme.colors.primary }}>
+                Voice Translator
+             </PaperText>
+             <PaperText variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                Tap the mic to translate instantly
+             </PaperText>
         </View>
-         <View style={styles.selectorContainer}>
-          <PaperText
-            variant="labelLarge"
-            style={{ marginBottom: 5, color: theme.colors.outline }}
-          >
+
+        <View style={styles.selectorContainer}>
+          <PaperText variant="labelLarge" style={{ marginBottom: 5, color: theme.colors.outline }}>
             Translate from:
           </PaperText>
           <Dropdown
-            style={[
-              stylesA.dropdown,
-              { borderColor: theme.colors.outline, borderWidth: 1 },
-            ]}
+            style={[stylesA.dropdown, { borderColor: theme.colors.outline, borderWidth: 1 }]}
             placeholderStyle={stylesA.placeholderStyle}
             selectedTextStyle={stylesA.selectedTextStyle}
             data={languagesData}
             labelField="label"
             valueField="value"
             value={spokenLanguage}
-            onChange={(item) => setLanguage(item.value)}
+            onChange={(item) => setSpokenLanguage(item.value)}
             renderRightIcon={() => (
-              <Ionicons
-                name="chevron-down"
-                size={20}
-                color={theme.colors.onSurface}
-              />
+              <Ionicons name="chevron-down" size={20} color={theme.colors.onSurface} />
             )}
           />
         </View>
+        
         <View style={styles.selectorContainer}>
-          <PaperText
-            variant="labelLarge"
-            style={{ marginBottom: 5, color: theme.colors.outline }}
-          >
+          <PaperText variant="labelLarge" style={{ marginBottom: 5, color: theme.colors.outline }}>
             Translate to:
           </PaperText>
           <Dropdown
-            style={[
-              stylesA.dropdown,
-              { borderColor: theme.colors.outline, borderWidth: 1 },
-            ]}
+            style={[stylesA.dropdown, { borderColor: theme.colors.outline, borderWidth: 1 }]}
             placeholderStyle={stylesA.placeholderStyle}
             selectedTextStyle={stylesA.selectedTextStyle}
             data={languagesData}
@@ -195,11 +124,7 @@ export default function TranslationScreen() {
             value={language}
             onChange={(item) => setLanguage(item.value)}
             renderRightIcon={() => (
-              <Ionicons
-                name="chevron-down"
-                size={20}
-                color={theme.colors.onSurface}
-              />
+              <Ionicons name="chevron-down" size={20} color={theme.colors.onSurface} />
             )}
           />
         </View>
@@ -223,7 +148,7 @@ export default function TranslationScreen() {
                   : theme.colors.primary,
               },
             ]}
-            onPress={isRecording ? stopRecording : startRecording}
+            onPress={isRecording ? stopRecording : onStartRecording}
             disabled={isLoading}
           >
             {isRecording ? (
@@ -253,7 +178,6 @@ export default function TranslationScreen() {
   );
 }
 
-/* -------- Styles -------- */
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 20 },

@@ -2,8 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_KEY || '';
+if (!process.env.EXPO_PUBLIC_SUPABASE_URL) throw new Error("Supabase URL missing");
+if (!process.env.EXPO_PUBLIC_SUPABASE_KEY) throw new Error("Supabase Key missing");
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
 const ExpoStorageAdapter = {
   getItem: (key: string) => {

@@ -10,14 +10,12 @@ import {
     SafeAreaView,
     StyleSheet,
     TouchableOpacity,
-    View,
-    StatusBar
+    View
 } from "react-native";
 import {
     IconButton,
     Text,
-    useTheme,
-    Surface
+    useTheme
 } from "react-native-paper";
 
 const DaySummaryItem = ({ date, count, onPress }: { date: string, count: number, onPress: () => void }) => {

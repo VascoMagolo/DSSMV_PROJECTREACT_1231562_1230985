@@ -1,10 +1,11 @@
 import { styles as stylesA } from '@/constants/styles';
 import { useHistory } from '@/src/context/BilingualHistoryContext';
 import { useTranslation } from "@/src/context/TranslationContext";
+import { useSpeechRecognition } from '@/src/hooks/speechRecognition';
 import { languagesData } from '@/src/types/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
-import React, { useEffect, useState } from 'react';
+import React, { useReducer } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,10 +16,6 @@ import {
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { IconButton, useTheme } from 'react-native-paper';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
 
 const localeMap: Record<string, string> = {
   pt: 'pt-PT',
@@ -26,6 +23,31 @@ const localeMap: Record<string, string> = {
   es: 'es-ES',
   fr: 'fr-FR',
 };
+
+type BilingualState = {
+  langA: string;
+  langB: string;
+};
+
+type BilingualAction =
+  | { type: 'SET_LANG_A'; payload: string }
+  | { type: 'SET_LANG_B'; payload: string }
+  | { type: 'SWAP_LANGUAGES' };
+
+const initialState: BilingualState = {
+  langA: 'en',
+  langB: 'pt',
+};
+
+function bilingualReducer(state: BilingualState, action: BilingualAction): BilingualState {
+  switch (action.type) {
+    case 'SET_LANG_A': return { ...state, langA: action.payload };
+    case 'SET_LANG_B': return { ...state, langB: action.payload };
+    case 'SWAP_LANGUAGES':
+      return { ...state, langA: state.langB, langB: state.langA };
+    default: return state;
+  }
+}
 
 const TranslationCard = ({
   language,
@@ -81,157 +103,66 @@ const TranslationCard = ({
 
 export default function BilingualScreen() {
   const theme = useTheme();
-  const [langA, setLangA] = useState<string>('en');
-  const [langB, setLangB] = useState<string>('pt');
   const { saveTranslation } = useHistory(); 
-  const [textA, setTextA] = useState('');
-  const [textB, setTextB] = useState('');
-  const [listeningA, setListeningA] = useState(false);
-  const [listeningB, setListeningB] = useState(false);
-  const { performDetectionAndTranslation, isLoading } = useTranslation();
-  const [translatedText, setTranslatedText] = useState("");
-  const [hasPermission, setHasPermission] = useState(false);
+  const { performDetectionAndTranslation } = useTranslation();
 
-  useSpeechRecognitionEvent("result", (event) => {
-    if (!event.results || event.results.length === 0) return;
-  const transcript = event.results[0].transcript || "";
+  const [state, dispatch] = useReducer(bilingualReducer, initialState);
 
-  if (listeningA) {
-    setTextA(transcript);
-  }
+  const handleTranslate = async (
+    originalText: string, 
+    sourceLang: string, 
+    targetLang: string, 
+    speakerSide: 'A' | 'B',
+    setTargetText: (t: string) => void
+  ) => {
+    if (!originalText.trim()) return;
 
-  if (listeningB) {
-    setTextB(transcript);
-  }
-});
-
-  useSpeechRecognitionEvent("end", () => {
-    if (listeningA && textA.trim()) {
-    handleTranslateFromA(textA);
-  }
-
-  if (listeningB && textB.trim()) {
-    handleTranslateFromB(textB);
-  }
-
-  setListeningA(false);
-  setListeningB(false);
-});
-
-  useSpeechRecognitionEvent("error", (event) => {
-    console.log("STT error:", event.error, event.message);
-    setListeningA(false);
-    setListeningB(false);
-  });
-
-  useEffect(() => {
-    const requestPermissions = async () => {
-      const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      setHasPermission(granted);
-    };
-    requestPermissions();
-  }, []);
-
-  const handleTTS = async (text: string, language: string) => {
-    const locale = localeMap[language] || 'en-US';
-    Speech.speak(text, { language: locale });
-  };
-
-  const handleSwap = () => {
-    const tempLang = langA;
-    const tempText = textA;
-
-    setLangA(langB);
-    setTextA(textB);
-
-    setLangB(tempLang);
-    setTextB(tempText);
-  };
-
-  const handleTranslateFromA = async (text: string) => {
-    if (!text.trim()) return;
-    const result = await performDetectionAndTranslation(text, langB);
+    const result = await performDetectionAndTranslation(originalText, targetLang);
     if (result) {
-      setTranslatedText(result.translatedText);
-      setTextB(result.translatedText);
-      
-      await saveTranslation(
-        result.originalText, 
-        result.translatedText,
-        langA, 
-        langB, 
-        'A'
-      );
-      handleTTS(result.translatedText, langB);
-    }
-  };
+      setTargetText(result.translatedText);
+      Speech.speak(result.translatedText, { language: localeMap[targetLang] || 'en-US' });
 
-  const handleTranslateFromB = async (text: string) => {
-    if (!text.trim()) return;
-    const result = await performDetectionAndTranslation(text, langA);
-    if (result) {
-      setTranslatedText(result.translatedText);
-      setTextA(result.translatedText);
-      
       await saveTranslation(
         result.originalText,
         result.translatedText,
-        langB,
-        langA,
-        'B'
+        sourceLang,
+        targetLang,
+        speakerSide
       );
-      handleTTS(result.translatedText, langA);
     }
   };
 
-  const startRecognition = async (listenLang: string) => {
-    if (!hasPermission) return;
+  const speakerA = useSpeechRecognition((text) => {
+    handleTranslate(text, state.langA, state.langB, 'A', (t) => speakerB.setSpokenText(t));
+  });
 
-    const locale = localeMap[listenLang] || 'en-US';
+  const speakerB = useSpeechRecognition((text) => {
+    handleTranslate(text, state.langB, state.langA, 'B', (t) => speakerA.setSpokenText(t));
+  });
 
-    try {
-      await ExpoSpeechRecognitionModule.start({
-        lang: locale,
-        interimResults: true,
-        continuous: false,
-      });
-    } catch (error) {
-      console.log("Error initiating STT:", error);
+  const handleSwap = () => {
+    dispatch({ type: 'SWAP_LANGUAGES' });
+    
+    const textA = speakerA.spokenText;
+    const textB = speakerB.spokenText;
+    speakerA.setSpokenText(textB);
+    speakerB.setSpokenText(textA);
+  };
+
+  const onPressA = () => {
+    if (speakerA.isRecording) {
+      speakerA.stopRecording();
+    } else if (!speakerB.isRecording) {
+      speakerA.startRecording();
     }
   };
 
-  const stopRecognition = async () => {
-    try {
-      await ExpoSpeechRecognitionModule.stop();
-    } catch (error) {
-      console.log("Error stopping STT:", error);
+  const onPressB = () => {
+    if (speakerB.isRecording) {
+      speakerB.stopRecording();
+    } else if (!speakerA.isRecording) {
+      speakerB.startRecording();
     }
-  };
-
-  const handleSpeakA = async () => {
-    if (listeningA) {
-      setListeningA(false);
-      await stopRecognition();
-      return;
-    }
-
-    setListeningA(true);
-    setListeningB(false);
-    setTextA("Listening...");
-    await startRecognition(langA);
-  };
-
-  const handleSpeakB = async () => {
-    if (listeningB) {
-      setListeningB(false);
-      await stopRecognition();
-      return;
-    }
-
-    setListeningB(true);
-    setListeningA(false);
-    setTextB("Listening...");
-    await startRecognition(langB);
   };
 
   return (
@@ -240,14 +171,15 @@ export default function BilingualScreen() {
       style={[styles.container, { backgroundColor: '#F0F2F5' }]}
     >
       <TranslationCard
-        language={langA}
-        setLanguage={setLangA}
-        text={textA}
+        language={state.langA}
+        setLanguage={(val: string) => dispatch({ type: 'SET_LANG_A', payload: val })}
+        text={speakerA.spokenText}
         isRotated={true}
-        onSpeak={handleSpeakA}
-        isListening={listeningA}
+        onSpeak={onPressA}
+        isListening={speakerA.isRecording}
         theme={theme}
       />
+      
       <View style={styles.swapContainer}>
         <IconButton
           icon="swap-vertical"
@@ -258,13 +190,14 @@ export default function BilingualScreen() {
           style={styles.swapButton}
         />
       </View>
+
       <TranslationCard
-        language={langB}
-        setLanguage={setLangB}
-        text={textB}
+        language={state.langB}
+        setLanguage={(val: string) => dispatch({ type: 'SET_LANG_B', payload: val })}
+        text={speakerB.spokenText}
         isRotated={false}
-        onSpeak={handleSpeakB}
-        isListening={listeningB}
+        onSpeak={onPressB}
+        isListening={speakerB.isRecording}
         theme={theme}
       />
     </KeyboardAvoidingView>
